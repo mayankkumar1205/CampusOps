@@ -25,7 +25,7 @@ const Register = () => {
         
         try {
             // 1. Register the user
-            await axios.post('https://campus-complaint-system.onrender.com/api/auth/register', { 
+            await axios.post('http://localhost:5000/api/auth/register', { 
                 email: email.trim(), 
                 password, 
                 name: name.trim(), 

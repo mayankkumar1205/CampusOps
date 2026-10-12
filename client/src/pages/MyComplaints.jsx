@@ -24,7 +24,7 @@ const MyComplaints = () => {
     const fetchComplaints = async () => {
         setLoading(true);
         try {
-            const complaintsRes = await axios.get('https://campus-complaint-system.onrender.com/api/complaints/my', {
+            const complaintsRes = await axios.get('http://localhost:5000/api/complaints/my', {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             setComplaints(complaintsRes.data);
@@ -36,7 +36,7 @@ const MyComplaints = () => {
 
     const fetchFeedbacks = async () => {
         try {
-            const feedbacksRes = await axios.get('https://campus-complaint-system.onrender.com/api/feedback', {
+            const feedbacksRes = await axios.get('http://localhost:5000/api/feedback', {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             setFeedbacks(feedbacksRes.data);
@@ -47,7 +47,7 @@ const MyComplaints = () => {
 
     const fetchProfile = async () => {
         try {
-            const profileRes = await axios.get('https://campus-complaint-system.onrender.com/api/auth/profile', {
+            const profileRes = await axios.get('http://localhost:5000/api/auth/profile', {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             setUserInfo(profileRes.data);
@@ -84,7 +84,7 @@ const MyComplaints = () => {
 
     const submitFeedback = async (complaintId, rating, comment) => {
         try {
-            await axios.post('https://campus-complaint-system.onrender.com/api/feedback', { complaintId, rating, comment }, {
+            await axios.post('http://localhost:5000/api/feedback', { complaintId, rating, comment }, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             fetchFeedbacks();

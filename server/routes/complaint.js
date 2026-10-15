@@ -4,6 +4,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const isAdmin = require('../middleware/isAdmin');
 const upload = require('../middleware/upload');
 const isStaff = require('../middleware/isStaff');
+const isAssignedStaff = require('../middleware/isAssignedStaff');
 const {
     createComplaint,
     getMyComplaints,
@@ -34,6 +35,8 @@ router.get('/', authMiddleware, isAdmin, getAllComplaints);
 
 // Generic get by id route should be last
 router.get('/:id', authMiddleware, getComplaintById);
+
+router.post('/:id/staff-update', authMiddleware, isStaff, isAssignedStaff, upload.single('photo'), staffUpdateComplaint);
 
 module.exports = router;
 

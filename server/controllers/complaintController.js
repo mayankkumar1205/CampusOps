@@ -1,7 +1,7 @@
 const Complaint = require('../models/Complaint');
 const User = require('../models/User');
 const { sendResolutionEmail } = require('../utils/mailer');
-const nodemailer = require('nodemailer');
+
 
 // Create a new complaint
 const createComplaint = async (req, res) => {
@@ -40,10 +40,24 @@ const getMyComplaints = async (req, res) => {
 const getComplaintById = async (req, res) => {
     try {
         const complaint = await Complaint.findById(req.params.id);
-        if (!complaint) return res.status(404).json({ message: 'Complaint not found' });
+
+        if (!complaint) {
+            return res.status(404).json({ message: 'Complaint not found' });
+        }
+
+        const isAdmin = req.user.role === 'admin';
+        const isOwner = String(complaint.raisedBy) === String(req.user.id);
+        const isAssignedStaff =
+            req.user.role === 'staff' &&
+            String(complaint.assignedTo) === String(req.user.id);
+
+        if (!isAdmin && !isOwner && !isAssignedStaff) {
+            return res.status(403).json({ message: 'You are not allowed to view this complaint.' });
+        }
+
         res.json(complaint);
     } catch (error) {
-        console.error(error); // This will print the real error in your backend terminal
+        console.error(error);
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -169,12 +183,13 @@ const staffUpdateComplaint = async (req, res) => {
     try {
         const { remarks } = req.body;
         const photoUrl = req.file ? `/uploads/${req.file.filename}` : '';
-        const complaint = await Complaint.findById(req.params.id);
-        if (!complaint) return res.status(404).json({ message: 'Complaint not found' });
+        const complaint = req.complaint;
+
         complaint.staffUpdates.push({ photoUrl, remarks, updatedAt: new Date() });
         complaint.updatedAt = new Date();
+
         await complaint.save();
-        // No email to admins
+
         res.json({ message: 'Update submitted', complaint });
     } catch (error) {
         console.error(error);
@@ -228,28 +243,6 @@ const getComplaintStats = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
-
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
-
-transporter.sendMail({
-    from: 'YOUR_EMAIL@gmail.com',
-    to: 'YOUR_EMAIL@gmail.com',
-    subject: 'Test Email',
-    text: 'This is a test'
-}, (err, info) => {
-    if (err) {
-        return console.error('Error:', err);
-    }
-    console.log('Sent:', info.response);
-});
 
 module.exports = {
     createComplaint,

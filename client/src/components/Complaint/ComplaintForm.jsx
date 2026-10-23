@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../../api/config';
 
 const ComplaintForm = () => {
     const [title, setTitle] = useState('');
@@ -26,7 +27,7 @@ const ComplaintForm = () => {
             formData.append('category', category);
             formData.append('dueInDays', dueInDays);
             if (image) formData.append('image', image);
-            await axios.post('http://localhost:5000/api/complaints', formData, {
+            await axios.post(`${API_BASE_URL}/complaints`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     Authorization: `Bearer ${localStorage.getItem('token')}`

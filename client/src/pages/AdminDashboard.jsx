@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../api/config';
 
 const statusColors = {
   'pending': 'secondary',
@@ -25,7 +26,7 @@ const AdminDashboard = () => {
     const fetchComplaints = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:5000/api/complaints', {
+            const res = await axios.get(`${API_BASE_URL}/complaints`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             setComplaints(res.data);
@@ -37,7 +38,7 @@ const AdminDashboard = () => {
 
     const fetchStaff = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/auth/staff', {
+            const res = await axios.get(`${API_BASE_URL}/auth/staff`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             console.log('Staff data received:', res.data);
@@ -56,7 +57,7 @@ const AdminDashboard = () => {
                 return;
             }
             
-            await axios.put(`http://localhost:5000/api/complaints/${complaintId}/assign`, { staffId }, {
+            await axios.put(`${API_BASE_URL}/complaints/${complaintId}/assign`, { staffId }, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             console.log(`Complaint ${complaintId} assigned to staff ${staffId}`);
@@ -76,7 +77,7 @@ const AdminDashboard = () => {
     };
 
     const handleStatusUpdate = async (complaintId) => {
-        await axios.put(`http://localhost:5000/api/complaints/${complaintId}/status`, {
+        await axios.put(`${API_BASE_URL}/complaints/${complaintId}/status`, {
             status: statusEdit[complaintId],
             resolutionNotes: notesEdit[complaintId]
         }, {

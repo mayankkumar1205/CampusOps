@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import API_BASE_URL from '../api/config';
 
 const ComplaintDetail = () => {
     const { id } = useParams();
@@ -12,7 +13,7 @@ const ComplaintDetail = () => {
         const fetchComplaint = async () => {
             setLoading(true);
             try {
-                const res = await axios.get(`http://localhost:5000/api/complaints/${id}`, {
+                const res = await axios.get(`${API_BASE_URL}/complaints/${id}`, {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                 });
                 setComplaint(res.data);

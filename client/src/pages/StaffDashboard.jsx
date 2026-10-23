@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../api/config';
 
 const statusColors = {
   'pending': 'secondary',
@@ -24,7 +25,7 @@ const StaffDashboard = () => {
     const fetchAssignedComplaints = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:5000/api/complaints/assigned', {
+            const res = await axios.get(`${API_BASE_URL}/complaints/assigned`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             setComplaints(res.data);
@@ -43,7 +44,7 @@ const StaffDashboard = () => {
 
     const fetchProfile = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/auth/profile', {
+            const res = await axios.get(`${API_BASE_URL}/auth/profile`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             setUserInfo(res.data);
@@ -85,7 +86,7 @@ const StaffDashboard = () => {
 
     const submitStaffUpdate = async (selectedComplaint, formData) => {
         try {
-            await axios.post(`http://localhost:5000/api/complaints/${selectedComplaint._id}/staff-update`, formData, {
+            await axios.post(`${API_BASE_URL}/complaints/${selectedComplaint._id}/staff-update`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     Authorization: `Bearer ${localStorage.getItem('token')}`

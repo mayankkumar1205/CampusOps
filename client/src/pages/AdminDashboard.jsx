@@ -16,6 +16,11 @@ const formatDueDate = (complaint) => {
     return `${complaint.dueInDays} day(s)`;
 };
 
+const isOverdue = (complaint) =>
+    complaint.status !== 'resolved' &&
+    Boolean(complaint.dueDate) &&
+    new Date(complaint.dueDate) < new Date();
+
 const AdminDashboard = () => {
     const [complaints, setComplaints] = useState({
         pending: [],
@@ -45,11 +50,12 @@ const AdminDashboard = () => {
                 }
             });
             setComplaints(res.data);
+            setError('');
         } catch (err) {
             setError('Failed to fetch complaints');
+        } finally {
+            setLoading(false);
         }
-
-        setLoading(false);
     };
 
     const fetchStaff = async () => {
@@ -59,7 +65,6 @@ const AdminDashboard = () => {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             });
-            console.log('Staff data received:', res.data);
             setStaffList(res.data);
         } catch (err) {
             console.error('Error fetching staff:', err);
@@ -84,8 +89,7 @@ const AdminDashboard = () => {
                 }
             );
 
-            console.log(`Complaint ${complaintId} assigned to staff ${staffId}`);
-            fetchComplaints();
+            await fetchComplaints();
         } catch (err) {
             console.error('Error assigning complaint:', err);
             alert(
@@ -104,20 +108,28 @@ const AdminDashboard = () => {
     };
 
     const handleStatusUpdate = async (complaintId) => {
-        await axios.put(
-            `${API_BASE_URL}/complaints/${complaintId}/status`,
-            {
-                status: statusEdit[complaintId],
-                resolutionNotes: notesEdit[complaintId]
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
+        try {
+            await axios.put(
+                `${API_BASE_URL}/complaints/${complaintId}/status`,
+                {
+                    status: statusEdit[complaintId],
+                    resolutionNotes: notesEdit[complaintId]
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    }
                 }
-            }
-        );
+            );
 
-        fetchComplaints();
+            await fetchComplaints();
+        } catch (err) {
+            console.error('Error updating complaint:', err);
+            alert(
+                err.response?.data?.message ||
+                    'Failed to update complaint status.'
+            );
+        }
     };
 
     const filteredPending = complaints.pending.filter(
@@ -138,13 +150,33 @@ const AdminDashboard = () => {
             complaint.status.toLowerCase().includes(search.toLowerCase())
     );
 
+    const openComplaints = [
+        ...complaints.pending,
+        ...complaints.inProgress
+    ];
+
+    const staffWorkload = staffList.map((staff) => {
+        const openComplaintCount = openComplaints.filter((complaint) => {
+            const assignedStaffId =
+                complaint.assignedTo?._id || complaint.assignedTo;
+
+            return String(assignedStaffId || '') === String(staff._id);
+        }).length;
+
+        return { ...staff, openComplaintCount };
+    });
+
     const renderComplaintRow = (complaint) => (
         <React.Fragment key={complaint._id}>
             <tr>
-                <td><strong>{complaint.title}</strong></td>
+                <td>
+                    <strong>{complaint.title}</strong>
+                </td>
                 <td>
                     {complaint.status ? (
-                        <span className={`badge bg-${statusColors[complaint.status]}`}>
+                        <span
+                            className={`badge bg-${statusColors[complaint.status]}`}
+                        >
                             {complaint.status.replace('-', ' ')}
                         </span>
                     ) : (
@@ -152,7 +184,12 @@ const AdminDashboard = () => {
                     )}
                 </td>
                 <td>{complaint.category}</td>
-                <td>{formatDueDate(complaint)}</td>
+                <td>
+                    {formatDueDate(complaint)}
+                    {isOverdue(complaint) && (
+                        <span className="badge bg-danger ms-2">Overdue</span>
+                    )}
+                </td>
                 <td>{complaint.raisedBy?.email}</td>
                 <td>
                     {complaint.assignedTo?.email || (
@@ -163,13 +200,17 @@ const AdminDashboard = () => {
                     <select
                         className="form-select"
                         value={complaint.assignedTo?._id || ''}
-                        onChange={(e) => handleAssign(complaint._id, e.target.value)}
+                        onChange={(e) =>
+                            handleAssign(complaint._id, e.target.value)
+                        }
                     >
                         <option value="">Select Staff to Assign</option>
                         {staffList.map((staff) => (
                             <option key={staff._id} value={staff._id}>
                                 {staff.name || staff.email}
-                                {staff.department ? ` (${staff.department})` : ''}
+                                {staff.department
+                                    ? ` (${staff.department})`
+                                    : ''}
                             </option>
                         ))}
                     </select>
@@ -178,9 +219,14 @@ const AdminDashboard = () => {
                     <div className="d-flex align-items-center gap-2">
                         <select
                             className="form-select"
-                            value={statusEdit[complaint._id] || complaint.status}
+                            value={
+                                statusEdit[complaint._id] || complaint.status
+                            }
                             onChange={(e) =>
-                                handleStatusChange(complaint._id, e.target.value)
+                                handleStatusChange(
+                                    complaint._id,
+                                    e.target.value
+                                )
                             }
                             style={{ minWidth: 120 }}
                         >
@@ -190,7 +236,9 @@ const AdminDashboard = () => {
                         </select>
                         <button
                             className="btn btn-sm btn-primary"
-                            onClick={() => handleStatusUpdate(complaint._id)}
+                            onClick={() =>
+                                handleStatusUpdate(complaint._id)
+                            }
                         >
                             Update
                         </button>
@@ -206,57 +254,79 @@ const AdminDashboard = () => {
                                 : complaint.resolutionNotes || ''
                         }
                         onChange={(e) =>
-                            handleNotesChange(complaint._id, e.target.value)
+                            handleNotesChange(
+                                complaint._id,
+                                e.target.value
+                            )
                         }
                         placeholder="Add notes"
                     />
                 </td>
             </tr>
 
-            {complaint.staffUpdates && complaint.staffUpdates.length > 0 && (
-                <tr>
-                    <td colSpan="9">
-                        <div className="bg-light p-3 rounded">
-                            <strong>Staff Updates:</strong>
-                            <div className="row">
-                                {complaint.staffUpdates.map((update, index) => (
-                                    <div className="col-md-4 mb-2" key={index}>
-                                        <div className="card shadow-sm">
-                                            <div className="card-body">
-                                                <div
-                                                    className="mb-2 text-muted"
-                                                    style={{ fontSize: '0.9em' }}
-                                                >
-                                                    {update.updatedAt
-                                                        ? new Date(
-                                                              update.updatedAt
-                                                          ).toLocaleString()
-                                                        : ''}
+            {complaint.staffUpdates &&
+                complaint.staffUpdates.length > 0 && (
+                    <tr>
+                        <td colSpan="9">
+                            <div className="bg-light p-3 rounded">
+                                <strong>Staff Updates:</strong>
+                                <div className="row">
+                                    {complaint.staffUpdates.map(
+                                        (update, index) => (
+                                            <div
+                                                className="col-md-4 mb-2"
+                                                key={index}
+                                            >
+                                                <div className="card shadow-sm">
+                                                    <div className="card-body">
+                                                        <div
+                                                            className="mb-2 text-muted"
+                                                            style={{
+                                                                fontSize:
+                                                                    '0.9em'
+                                                            }}
+                                                        >
+                                                            {update.updatedAt
+                                                                ? new Date(
+                                                                      update.updatedAt
+                                                                  ).toLocaleString()
+                                                                : ''}
+                                                        </div>
+                                                        <div>
+                                                            {update.remarks}
+                                                        </div>
+                                                        {update.photoUrl && (
+                                                            <img
+                                                                src={
+                                                                    update.photoUrl
+                                                                }
+                                                                alt="Staff update"
+                                                                className="img-fluid rounded mt-2"
+                                                                style={{
+                                                                    maxHeight:
+                                                                        '120px'
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div>{update.remarks}</div>
-                                                {update.photoUrl && (
-                                                    <img
-                                                        src={update.photoUrl}
-                                                        alt="Staff update"
-                                                        className="img-fluid rounded mt-2"
-                                                        style={{ maxHeight: '120px' }}
-                                                    />
-                                                )}
                                             </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                        )
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </td>
-                </tr>
-            )}
+                        </td>
+                    </tr>
+                )}
         </React.Fragment>
     );
 
     return (
         <div className="container py-4">
-            <h2 className="mb-4" style={{ color: 'var(--primary-blue)' }}>
+            <h2
+                className="mb-4"
+                style={{ color: 'var(--primary-blue)' }}
+            >
                 Admin Complaint Dashboard
             </h2>
 
@@ -272,7 +342,9 @@ const AdminDashboard = () => {
             <div className="mb-4 d-flex justify-content-center gap-3">
                 <button
                     className={`btn btn-lg ${
-                        activeTab === 'pending' ? 'btn-primary' : 'btn-outline-primary'
+                        activeTab === 'pending'
+                            ? 'btn-primary'
+                            : 'btn-outline-primary'
                     }`}
                     onClick={() => setActiveTab('pending')}
                 >
@@ -280,7 +352,9 @@ const AdminDashboard = () => {
                 </button>
                 <button
                     className={`btn btn-lg ${
-                        activeTab === 'inProgress' ? 'btn-warning' : 'btn-outline-warning'
+                        activeTab === 'inProgress'
+                            ? 'btn-warning'
+                            : 'btn-outline-warning'
                     }`}
                     onClick={() => setActiveTab('inProgress')}
                 >
@@ -288,7 +362,9 @@ const AdminDashboard = () => {
                 </button>
                 <button
                     className={`btn btn-lg ${
-                        activeTab === 'resolved' ? 'btn-success' : 'btn-outline-success'
+                        activeTab === 'resolved'
+                            ? 'btn-success'
+                            : 'btn-outline-success'
                     }`}
                     onClick={() => setActiveTab('resolved')}
                 >
@@ -296,8 +372,44 @@ const AdminDashboard = () => {
                 </button>
             </div>
 
+            <div className="card shadow-sm mb-4">
+                <div className="card-body">
+                    <h4 className="mb-3">Staff Workload</h4>
+
+                    {staffWorkload.length === 0 ? (
+                        <p className="text-muted mb-0">
+                            No staff accounts are registered yet.
+                        </p>
+                    ) : (
+                        <div className="row g-3">
+                            {staffWorkload.map((staff) => (
+                                <div
+                                    className="col-sm-6 col-lg-4"
+                                    key={staff._id}
+                                >
+                                    <div className="border rounded p-3 h-100">
+                                        <strong>
+                                            {staff.name || staff.email}
+                                        </strong>
+                                        <div className="mt-2">
+                                            {staff.openComplaintCount} open
+                                            complaint(s)
+                                        </div>
+                                        <small className="text-muted">
+                                            Pending or in progress
+                                        </small>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {error && <div className="alert alert-danger">{error}</div>}
-            {loading && <div className="text-center">Loading complaints...</div>}
+            {loading && (
+                <div className="text-center">Loading complaints...</div>
+            )}
 
             <div className="table-responsive">
                 <table className="table table-bordered table-hover align-middle bg-white">

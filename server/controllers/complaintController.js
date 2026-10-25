@@ -39,12 +39,14 @@ const createComplaint = async (req, res) => {
             dueDate,
             date: submittedAt,
             imageUrl,
-            statusHistory: [{
-    status: 'pending',
-    changedBy: req.user.id,
-    note: 'Complaint submitted',
-    changedAt: submittedAt
-}],
+            statusHistory: [
+                {
+                    status: 'pending',
+                    changedBy: req.user.id,
+                    note: 'Complaint submitted',
+                    changedAt: submittedAt
+                }
+            ],
             raisedBy: req.user.id
         });
 
@@ -55,7 +57,7 @@ const createComplaint = async (req, res) => {
             complaint
         });
     } catch (error) {
-        console.error(error);
+        console.error('Error in createComplaint:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -63,10 +65,12 @@ const createComplaint = async (req, res) => {
 // Get all complaints for the logged-in user
 const getMyComplaints = async (req, res) => {
     try {
-        const complaints = await Complaint.find({ raisedBy: req.user.id }).sort({ date: -1 });
+        const complaints = await Complaint.find({ raisedBy: req.user.id })
+            .sort({ date: -1 });
+
         res.json(complaints);
     } catch (error) {
-        console.error(error);
+        console.error('Error in getMyComplaints:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -94,12 +98,12 @@ const getComplaintById = async (req, res) => {
 
         res.json(complaint);
     } catch (error) {
-        console.error(error);
+        console.error('Error in getComplaintById:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
 
-// Admin: Get all complaints split by status and sorted
+// Admin: Get complaints split by status and sorted by deadline
 const getAllComplaints = async (req, res) => {
     try {
         const complaints = await Complaint.find()
@@ -109,11 +113,17 @@ const getAllComplaints = async (req, res) => {
 
         const pending = complaints
             .filter((complaint) => complaint.status === 'pending')
-            .sort((a, b) => getDeadlineTimestamp(a) - getDeadlineTimestamp(b));
+            .sort(
+                (a, b) =>
+                    getDeadlineTimestamp(a) - getDeadlineTimestamp(b)
+            );
 
         const inProgress = complaints
             .filter((complaint) => complaint.status === 'in-progress')
-            .sort((a, b) => getDeadlineTimestamp(a) - getDeadlineTimestamp(b));
+            .sort(
+                (a, b) =>
+                    getDeadlineTimestamp(a) - getDeadlineTimestamp(b)
+            );
 
         const resolved = complaints.filter(
             (complaint) => complaint.status === 'resolved'
@@ -121,7 +131,7 @@ const getAllComplaints = async (req, res) => {
 
         res.json({ pending, inProgress, resolved });
     } catch (error) {
-        console.error(error);
+        console.error('Error in getAllComplaints:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -138,33 +148,64 @@ const assignComplaint = async (req, res) => {
         const staff = await User.findOne({ _id: staffId, role: 'staff' });
 
         if (!staff) {
-            return res.status(400).json({ message: 'Invalid staff member selected.' });
+            return res.status(400).json({
+                message: 'Invalid staff member selected.'
+            });
         }
 
-        const complaint = await Complaint.findByIdAndUpdate(
-            req.params.id,
-            { assignedTo: staffId, status: 'in-progress', updatedAt: Date.now() },
-            { new: true }
-        );
+        const complaint = await Complaint.findById(req.params.id);
 
         if (!complaint) {
             return res.status(404).json({ message: 'Complaint not found.' });
         }
 
-        try {
-            await sendResolutionEmail(
-                staff.email,
-                'New Complaint Assigned to You',
-                `Hello ${staff.name || staff.email},
+        const previousStatus = complaint.status;
+        const previousStaffId = complaint.assignedTo
+            ? String(complaint.assignedTo)
+            : '';
+        const assignmentChanged =
+            previousStaffId !== String(staff._id);
+        const statusChanged = previousStatus !== 'in-progress';
+        const changedAt = new Date();
+
+        complaint.assignedTo = staff._id;
+        complaint.status = 'in-progress';
+        complaint.updatedAt = changedAt;
+
+        if (assignmentChanged || statusChanged) {
+            const note = assignmentChanged
+                ? `Assigned to ${staff.name || staff.email} by admin`
+                : `Admin changed status from ${previousStatus} to in-progress`;
+
+            complaint.statusHistory.push({
+                status: 'in-progress',
+                changedBy: null,
+                note,
+                changedAt
+            });
+        }
+
+        await complaint.save();
+
+        if (assignmentChanged || statusChanged) {
+            try {
+                await sendResolutionEmail(
+                    staff.email,
+                    'New Complaint Assigned to You',
+                    `Hello ${staff.name || staff.email},
 
 A new complaint titled "${complaint.title || 'Complaint'}" has been assigned to you.
 
 Please check the system for details.
 
 Thank you.`
-            );
-        } catch (mailError) {
-            console.error('Assignment email failed:', mailError.code || 'unknown error');
+                );
+            } catch (mailError) {
+                console.error(
+                    'Assignment email failed:',
+                    mailError.code || 'unknown error'
+                );
+            }
         }
 
         res.json(complaint);
@@ -177,15 +218,56 @@ Thank you.`
 // Admin: Update complaint status and notes
 const updateComplaintStatus = async (req, res) => {
     const { status, resolutionNotes } = req.body;
+    const allowedStatuses = ['pending', 'in-progress', 'resolved'];
+
+    if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({
+            message: 'Invalid complaint status.'
+        });
+    }
 
     try {
-        const complaint = await Complaint.findById(req.params.id).populate('raisedBy');
+        const complaint = await Complaint.findById(req.params.id)
+            .populate('raisedBy');
 
         if (!complaint) {
             return res.status(404).json({ message: 'Complaint not found' });
         }
 
-        if (status === 'resolved' && complaint.raisedBy?.email) {
+        const previousStatus = complaint.status;
+        const statusChanged = previousStatus !== status;
+        const changedAt = new Date();
+
+        complaint.status = status;
+
+        if (resolutionNotes !== undefined) {
+            complaint.resolutionNotes = resolutionNotes;
+        }
+
+        complaint.updatedAt = changedAt;
+
+        if (statusChanged) {
+            const transitionNote =
+                `Admin changed status from ${previousStatus} to ${status}.`;
+            const extraNote = resolutionNotes?.trim();
+
+            complaint.statusHistory.push({
+                status,
+                changedBy: null,
+                note: extraNote
+                    ? `${transitionNote} ${extraNote}`
+                    : transitionNote,
+                changedAt
+            });
+        }
+
+        await complaint.save();
+
+        if (
+            statusChanged &&
+            status === 'resolved' &&
+            complaint.raisedBy?.email
+        ) {
             try {
                 await sendResolutionEmail(
                     complaint.raisedBy.email,
@@ -197,17 +279,16 @@ Your complaint titled "${complaint.title}" has been resolved.
 Thank you.`
                 );
             } catch (mailError) {
-                console.error('Resolution email failed:', mailError.code || 'unknown error');
+                console.error(
+                    'Resolution email failed:',
+                    mailError.code || 'unknown error'
+                );
             }
         }
 
-        complaint.status = status;
-        complaint.resolutionNotes = resolutionNotes;
-        complaint.updatedAt = Date.now();
-
-        await complaint.save();
-
-        res.json({ message: 'Complaint status updated successfully.' });
+        res.json({
+            message: 'Complaint status updated successfully.'
+        });
     } catch (error) {
         console.error('Error in updateComplaintStatus:', error);
         res.status(500).json({ message: 'Server error' });
@@ -223,7 +304,9 @@ const getAssignedComplaints = async (req, res) => {
             return res.status(400).json({ message: 'Invalid staff user.' });
         }
 
-        const complaints = await Complaint.find({ assignedTo: staffId }).sort({ date: -1 });
+        const complaints = await Complaint.find({ assignedTo: staffId })
+            .sort({ date: -1 });
+
         res.json(complaints);
     } catch (error) {
         console.error('Error in getAssignedComplaints:', error);
@@ -231,30 +314,36 @@ const getAssignedComplaints = async (req, res) => {
     }
 };
 
-// Staff: Submit update for a complaint (with photo and remarks)
+// Staff: Submit update for a complaint, with photo and remarks
 const staffUpdateComplaint = async (req, res) => {
     try {
         const { remarks } = req.body;
         const photoUrl = req.file ? `/uploads/${req.file.filename}` : '';
         const complaint = req.complaint;
 
-        complaint.staffUpdates.push({ photoUrl, remarks, updatedAt: new Date() });
+        complaint.staffUpdates.push({
+            photoUrl,
+            remarks,
+            updatedAt: new Date()
+        });
         complaint.updatedAt = new Date();
 
         await complaint.save();
 
         res.json({ message: 'Update submitted', complaint });
     } catch (error) {
-        console.error(error);
+        console.error('Error in staffUpdateComplaint:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
 
-// Get complaint statistics (public)
+// Get complaint statistics
 const getComplaintStats = async (req, res) => {
     try {
         const totalComplaints = await Complaint.countDocuments();
-        const resolvedComplaints = await Complaint.countDocuments({ status: 'resolved' });
+        const resolvedComplaints = await Complaint.countDocuments({
+            status: 'resolved'
+        });
 
         const resolvedComplaintsWithUpdates = await Complaint.find({
             status: 'resolved',
@@ -265,17 +354,24 @@ const getComplaintStats = async (req, res) => {
         let countWithResponseTime = 0;
 
         resolvedComplaintsWithUpdates.forEach((complaint) => {
-            if (complaint.staffUpdates && complaint.staffUpdates.length > 0) {
+            if (complaint.staffUpdates?.length > 0) {
                 const firstUpdate = complaint.staffUpdates[0];
-                const responseTime = firstUpdate.updatedAt - complaint.date;
+                const responseTime =
+                    firstUpdate.updatedAt - complaint.date;
+
                 totalResponseTime += responseTime;
                 countWithResponseTime++;
             }
         });
 
-        const avgResponseTime = countWithResponseTime > 0
-            ? Math.round(totalResponseTime / countWithResponseTime / (1000 * 60 * 60))
-            : 24;
+        const avgResponseTime =
+            countWithResponseTime > 0
+                ? Math.round(
+                      totalResponseTime /
+                          countWithResponseTime /
+                          (1000 * 60 * 60)
+                  )
+                : 24;
 
         res.json({
             total: totalComplaints,

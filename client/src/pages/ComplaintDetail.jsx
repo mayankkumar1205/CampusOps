@@ -33,7 +33,12 @@ const ComplaintDetail = () => {
             <h2>{complaint.title}</h2>
             <p><strong>Status:</strong> {complaint.status}</p>
             <p><strong>Category:</strong> {complaint.category}</p>
-            <p><strong>Due In:</strong> {complaint.dueInDays} day(s)</p>
+            <p>
+    <strong>Due Date:</strong>{' '}
+    {complaint.dueDate
+        ? new Date(complaint.dueDate).toLocaleDateString()
+        : `${complaint.dueInDays} day(s)`}
+</p>
             <p><strong>Description:</strong> {complaint.description}</p>
             {complaint.imageUrl && (
                 <div>

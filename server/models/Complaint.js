@@ -5,6 +5,25 @@ const complaintSchema = new mongoose.Schema({
     description: { type: String, required: true },
     imageUrl: { type: String },
     status: { type: String, enum: ['pending', 'in-progress', 'resolved'], default: 'pending' },
+    statusHistory: [{
+    status: {
+        type: String,
+        enum: ['pending', 'in-progress', 'resolved'],
+        required: true
+    },
+    changedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    note: {
+        type: String,
+        trim: true
+    },
+    changedAt: {
+        type: Date,
+        default: Date.now
+    }
+}],
     category: { type: String, required: true },
     dueInDays: {
         type: Number,

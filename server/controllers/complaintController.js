@@ -39,6 +39,12 @@ const createComplaint = async (req, res) => {
             dueDate,
             date: submittedAt,
             imageUrl,
+            statusHistory: [{
+    status: 'pending',
+    changedBy: req.user.id,
+    note: 'Complaint submitted',
+    changedAt: submittedAt
+}],
             raisedBy: req.user.id
         });
 

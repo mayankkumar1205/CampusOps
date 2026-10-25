@@ -12,6 +12,9 @@ const complaintSchema = new mongoose.Schema({
         enum: [1, 2, 3], // 1: within 1 day, 2: within 2 days, 3: more days
         default: 3
     },
+    dueDate: {
+    type: Date
+},
     raisedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // staff user
     resolutionNotes: { type: String },

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../api/config';
+import { connectSocket } from '../api/socket';
 
 const statusColors = {
   'pending': 'secondary',
@@ -41,6 +42,24 @@ const StaffDashboard = () => {
         fetchAssignedComplaints();
         fetchProfile();
     }, []);
+
+    useEffect(() => {
+    const socket = connectSocket();
+
+    if (!socket) {
+        return;
+    }
+
+    const refreshAssignedComplaints = () => {
+        fetchAssignedComplaints();
+    };
+
+    socket.on('complaint:updated', refreshAssignedComplaints);
+
+    return () => {
+        socket.off('complaint:updated', refreshAssignedComplaints);
+    };
+}, []);
 
     const fetchProfile = async () => {
         try {

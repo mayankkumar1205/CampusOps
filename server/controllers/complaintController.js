@@ -1,6 +1,7 @@
 const Complaint = require('../models/Complaint');
 const User = require('../models/User');
 const { sendResolutionEmail } = require('../utils/mailer');
+const { emitComplaintEvent } = require('../utils/complaintEvents');
 
 const getDeadlineTimestamp = (complaint) => {
     if (complaint.dueDate) {
@@ -51,6 +52,12 @@ const createComplaint = async (req, res) => {
         });
 
         await complaint.save();
+
+        emitComplaintEvent(
+            req.app.get('io'),
+            complaint,
+            'complaint:created'
+        );
 
         res.status(201).json({
             message: 'Complaint submitted successfully',
@@ -187,6 +194,8 @@ const assignComplaint = async (req, res) => {
 
         await complaint.save();
 
+        emitComplaintEvent(req.app.get('io'), complaint);
+
         if (assignmentChanged || statusChanged) {
             try {
                 await sendResolutionEmail(
@@ -263,6 +272,8 @@ const updateComplaintStatus = async (req, res) => {
 
         await complaint.save();
 
+        emitComplaintEvent(req.app.get('io'), complaint);
+
         if (
             statusChanged &&
             status === 'resolved' &&
@@ -329,6 +340,8 @@ const staffUpdateComplaint = async (req, res) => {
         complaint.updatedAt = new Date();
 
         await complaint.save();
+
+        emitComplaintEvent(req.app.get('io'), complaint);
 
         res.json({ message: 'Update submitted', complaint });
     } catch (error) {

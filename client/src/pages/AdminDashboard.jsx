@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../api/config';
+import { connectSocket } from '../api/socket';
 
 const statusColors = {
     pending: 'secondary',
@@ -81,6 +82,36 @@ const AdminDashboard = () => {
             setStaffList([]);
         }
     };
+
+    useEffect(() => {
+    const socket = connectSocket();
+
+    if (!socket) {
+        return;
+    }
+
+    const refreshComplaints = async () => {
+        try {
+            const res = await axios.get(`${API_BASE_URL}/complaints`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            setComplaints(res.data);
+            setError('');
+        } catch (err) {
+            setError('Failed to refresh complaints');
+        }
+    };
+
+    socket.on('complaint:created', refreshComplaints);
+    socket.on('complaint:updated', refreshComplaints);
+
+    return () => {
+        socket.off('complaint:created', refreshComplaints);
+        socket.off('complaint:updated', refreshComplaints);
+    };
+}, []);
 
     const handleStaffFormChange = (e) => {
         const { name, value } = e.target;

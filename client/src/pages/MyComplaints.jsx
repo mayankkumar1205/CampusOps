@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
 import API_BASE_URL from '../api/config';
+import { connectSocket } from '../api/socket';
 
 const statusColors = {
   'pending': 'secondary',
@@ -29,6 +30,7 @@ const MyComplaints = () => {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             setComplaints(complaintsRes.data);
+            calculateStats(complaintsRes.data);
         } catch (err) {
             setError('Failed to fetch complaints');
         }
@@ -56,6 +58,26 @@ const MyComplaints = () => {
             setError('Failed to fetch profile');
         }
     };
+
+    useEffect(() => {
+    const socket = connectSocket();
+
+    if (!socket) {
+        return;
+    }
+
+    const refreshComplaints = () => {
+        fetchComplaints();
+    };
+
+    socket.on('complaint:created', refreshComplaints);
+    socket.on('complaint:updated', refreshComplaints);
+
+    return () => {
+        socket.off('complaint:created', refreshComplaints);
+        socket.off('complaint:updated', refreshComplaints);
+    };
+}, []);
 
     useEffect(() => {
         fetchComplaints();

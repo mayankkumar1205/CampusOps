@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
+import {
+    BrowserRouter as Router,
+    Route,
+    Switch,
+    Redirect
+} from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './components/Auth/Login';
@@ -10,6 +15,7 @@ import ComplaintDetail from './pages/ComplaintDetail';
 import AdminDashboard from './pages/AdminDashboard';
 import StaffDashboard from './pages/StaffDashboard';
 import { jwtDecode } from 'jwt-decode';
+import { connectSocket, disconnectSocket } from './api/socket';
 
 const App = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -20,17 +26,21 @@ const App = () => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         setIsLoggedIn(!!token);
+
         if (token) {
             try {
                 const decoded = jwtDecode(token);
                 setUserRole(decoded.role);
-                setUserEmail(decoded.role === 'admin' ? 'Admin' : decoded.email);
+                setUserEmail(
+                    decoded.role === 'admin' ? 'Admin' : decoded.email
+                );
                 setUserInfo({
                     name: decoded.name,
                     department: decoded.department,
                     email: decoded.email
                 });
-            } catch (e) {
+            } catch (error) {
+                setIsLoggedIn(false);
                 setUserRole('');
                 setUserEmail('');
                 setUserInfo({});
@@ -41,6 +51,18 @@ const App = () => {
             setUserInfo({});
         }
     }, []);
+
+    useEffect(() => {
+        if (!isLoggedIn) {
+            return;
+        }
+
+        connectSocket();
+
+        return () => {
+            disconnectSocket();
+        };
+    }, [isLoggedIn]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -55,12 +77,17 @@ const App = () => {
         localStorage.setItem('token', response.data.token);
         setIsLoggedIn(true);
         setUserRole(response.data.user.role);
-        setUserEmail(response.data.user.role === 'admin' ? 'Admin' : response.data.user.email);
+        setUserEmail(
+            response.data.user.role === 'admin'
+                ? 'Admin'
+                : response.data.user.email
+        );
         setUserInfo({
             name: response.data.user.name,
             department: response.data.user.department,
             email: response.data.user.email
         });
+
         if (response.data.user.role === 'admin') {
             history.push('/admin/dashboard');
         } else if (response.data.user.role === 'staff') {
@@ -72,35 +99,81 @@ const App = () => {
 
     return (
         <Router>
-            <Navbar 
-                isLoggedIn={isLoggedIn} 
-                onLogout={handleLogout} 
-                userRole={userRole} 
-                userEmail={userEmail} 
+            <Navbar
+                isLoggedIn={isLoggedIn}
+                onLogout={handleLogout}
+                userRole={userRole}
+                userEmail={userEmail}
                 userInfo={userInfo}
             />
+
             <Switch>
-                <Route path="/login/:role" render={(props) => (
-                    isLoggedIn ? <Redirect to="/" /> : <Login {...props} setIsLoggedIn={setIsLoggedIn} onLoginSuccess={handleLoginSuccess} />
-                )} />
-                <Route path="/register/:role" render={(props) => (
-                    isLoggedIn ? <Redirect to="/" /> : <Register {...props} />
-                )} />
+                <Route
+                    path="/login/:role"
+                    render={(props) =>
+                        isLoggedIn ? (
+                            <Redirect to="/" />
+                        ) : (
+                            <Login
+                                {...props}
+                                setIsLoggedIn={setIsLoggedIn}
+                                onLoginSuccess={handleLoginSuccess}
+                            />
+                        )
+                    }
+                />
+
+                <Route
+                    path="/register/:role"
+                    render={(props) =>
+                        isLoggedIn ? (
+                            <Redirect to="/" />
+                        ) : (
+                            <Register {...props} />
+                        )
+                    }
+                />
+
                 <Route path="/complaints/new">
-                    {isLoggedIn && userRole !== 'admin' ? <ComplaintForm /> : <Redirect to="/admin/dashboard" />}
+                    {isLoggedIn && userRole !== 'admin' ? (
+                        <ComplaintForm />
+                    ) : (
+                        <Redirect to="/admin/dashboard" />
+                    )}
                 </Route>
+
                 <Route path="/my-complaints">
-                    {isLoggedIn && userRole !== 'admin' ? <MyComplaints /> : <Redirect to="/admin/dashboard" />}
+                    {isLoggedIn && userRole !== 'admin' ? (
+                        <MyComplaints />
+                    ) : (
+                        <Redirect to="/admin/dashboard" />
+                    )}
                 </Route>
+
                 <Route path="/complaints/:id">
-                    {isLoggedIn && userRole !== 'admin' ? <ComplaintDetail /> : <Redirect to="/admin/dashboard" />}
+                    {isLoggedIn && userRole !== 'admin' ? (
+                        <ComplaintDetail />
+                    ) : (
+                        <Redirect to="/admin/dashboard" />
+                    )}
                 </Route>
+
                 <Route path="/admin/dashboard">
-                    {isLoggedIn && userRole === 'admin' ? <AdminDashboard /> : <Redirect to="/login/admin" />}
+                    {isLoggedIn && userRole === 'admin' ? (
+                        <AdminDashboard />
+                    ) : (
+                        <Redirect to="/login/admin" />
+                    )}
                 </Route>
+
                 <Route path="/staff/dashboard">
-                    {isLoggedIn && userRole === 'staff' ? <StaffDashboard /> : <Redirect to="/login/staff" />}
+                    {isLoggedIn && userRole === 'staff' ? (
+                        <StaffDashboard />
+                    ) : (
+                        <Redirect to="/login/staff" />
+                    )}
                 </Route>
+
                 <Route path="/" exact>
                     <Home userEmail={userEmail} userRole={userRole} />
                 </Route>

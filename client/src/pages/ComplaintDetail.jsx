@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import API_BASE_URL from '../api/config';
+import { connectSocket } from '../api/socket';
 
 const ComplaintDetail = () => {
     const { id } = useParams();
@@ -10,26 +11,43 @@ const ComplaintDetail = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        const fetchComplaint = async () => {
-            setLoading(true);
-            setError('');
+    const fetchComplaint = async () => {
+        setLoading(true);
+        setError('');
 
-            try {
-                const res = await axios.get(`${API_BASE_URL}/complaints/${id}`, {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-                setComplaint(res.data);
-            } catch (err) {
-                setError('Failed to fetch complaint details.');
-            } finally {
-                setLoading(false);
-            }
-        };
+        try {
+            const res = await axios.get(`${API_BASE_URL}/complaints/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            setComplaint(res.data);
+        } catch (err) {
+            setError('Failed to fetch complaint details.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        fetchComplaint();
-    }, [id]);
+    fetchComplaint();
+
+    const socket = connectSocket();
+    if (!socket) {
+        return undefined;
+    }
+
+    const refreshComplaint = (event) => {
+        if (event?.complaintId === id) {
+            fetchComplaint();
+        }
+    };
+
+    socket.on('complaint:updated', refreshComplaint);
+
+    return () => {
+        socket.off('complaint:updated', refreshComplaint);
+    };
+}, [id]);
 
     if (loading) {
         return <div className="container py-4">Loading...</div>;

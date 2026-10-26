@@ -6,7 +6,7 @@ const CenterPage = () => {
 
     return (
         <div className="center-page">
-            <h1>Welcome to Kongu Smart Campus Complaint System</h1>
+            <h1>Welcome to the Campus Complaint System at Dayananda Sagar College of Engineering</h1>
             <div className="role-buttons">
                 <button onClick={() => history.push('/login/admin')}>Admin Login</button>
                 <button onClick={() => history.push('/login/staff')}>Staff Login</button>

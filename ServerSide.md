@@ -1,64 +1,35 @@
-# File: app.js
+# Server-side overview
 
-Functions:
+The Express application and Socket.IO server start from server/app.js.
 
-Initializes Express server and middleware (CORS, JSON parsing)
+## Server setup
 
-Connects to MongoDB using Mongoose
+### app.js
+- Loads environment variables, configures JSON parsing and CORS, and serves uploaded images.
+- Connects to MongoDB through Mongoose.
+- Registers the authentication, complaint, feedback, and statistics routers.
+- Creates the HTTP server and Socket.IO server, authenticates socket connections with JWTs, and places users into their private notification rooms.
+- Listens on PORT (default 5000).
 
-Loads environment variables via .env
+The frontend origin is allowed through CLIENT_ORIGIN. Set it to the deployed client origin in production.
 
-Sets up Socket.IO for real-time complaint updates
+## Routes and permissions
 
-Handles user connection and live complaint notifications
+### routes/auth.js
+Provides registration and login, the authenticated profile route, the admin-only staff list, and the admin-only staff-account creation route.
 
-Starts the server on the specified port
+### routes/complaint.js
+Protects complaint routes with authentication and role or assignment middleware. Admins can review, assign, and change statuses. Students can submit complaints and view their own complaints. Staff can view assigned complaints and submit progress updates.
 
-Key Points:
+## Complaint data and real-time updates
 
-Uses express for backend framework
+### models/Complaint.js
+Stores complaint details, owner and staff assignment, deadline, current status, status history, resolution notes, and staff updates.
 
-Uses mongoose for database connection
+### controllers/complaintController.js
+Validates complaint creation, enforces access rules, updates assignment and status history, calculates statistics, and calls the event helper after saved changes.
 
-Uses socket.io for live updates between users and admins
+### utils/complaintEvents.js
+Sends complaint-created and complaint-updated events to admins, the complaint owner, and assigned staff. The client dashboards listen for these events and refresh their data.
 
-Loads config securely using dotenv
-
-Server listens on PORT from .env
-
-# File: config/db.js
-
-Functions:
-
-Establishes MongoDB connection using Mongoose
-
-Handles connection success or failure
-
-Logs connection status in console
-
-Key Points:
-
-Centralized DB connection for better reusability
-
-Uses process.env.MONGO_URI for connection string
-
-Exports a single connect function for use in app.js
-
-# File: routes/auth.js
-
-Functions:
-
-Defines routes for registration, login, and user profile
-
-Protects private routes using authMiddleware
-
-Provides endpoints for admin to view staff list
-
-Key Points:
-
-Uses express.Router() for modular route handling
-
-Imports controllers for logic separation
-
-Includes role-based protection using isAdmin middleware
-
+Uploaded images are saved under server/uploads/ and served through the /uploads route. Environment files and uploaded files are excluded from Git.

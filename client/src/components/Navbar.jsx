@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link, useHistory, useLocation } from 'react-router-dom';
-import logo from '../assets/logo.jpeg'; // Add your logo to client/src/assets/
 
 const Navbar = ({ isLoggedIn, onLogout, userRole, userEmail, userInfo }) => {
     const history = useHistory();
@@ -18,8 +17,8 @@ const Navbar = ({ isLoggedIn, onLogout, userRole, userEmail, userInfo }) => {
         <nav className="navbar navbar-expand-lg navbar-dark" style={{ backgroundColor: 'var(--primary-blue)' }}>
             <div className="container-fluid">
                 <Link className="navbar-brand d-flex align-items-center" to="/">
-                    <img src={logo} alt="Kongu Engineering College" height="40" className="me-2" />
-                    <span style={{ fontWeight: 700, letterSpacing: 1 }}>Kongu Engineering College</span>
+                    <span className="brand-mark" aria-hidden="true">DS</span>
+                    <span className="brand-name">Dayananda Sagar College of Engineering</span>
                 </Link>
                 
                 <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">

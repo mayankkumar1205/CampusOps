@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../api/config';
 import { connectSocket } from '../api/socket';
@@ -14,7 +14,6 @@ const StaffDashboard = () => {
     const [selectedComplaint, setSelectedComplaint] = useState(null);
     const [remarks, setRemarks] = useState('');
     const [photo, setPhoto] = useState(null);
-    const [refresh, setRefresh] = useState(false);
     const [stats, setStats] = useState({ total: 0, pending: 0, inProgress: 0, resolved: 0 });
     const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
@@ -23,7 +22,16 @@ const StaffDashboard = () => {
     const [userInfo, setUserInfo] = useState(null);
     const [error, setError] = useState(null);
 
-    const fetchAssignedComplaints = async () => {
+    const calculateStats = useCallback((complaintsData) => {
+        setStats({
+            total: complaintsData.length,
+            pending: complaintsData.filter((complaint) => complaint.status === 'pending').length,
+            inProgress: complaintsData.filter((complaint) => complaint.status === 'in-progress').length,
+            resolved: complaintsData.filter((complaint) => complaint.status === 'resolved').length
+        });
+    }, []);
+
+    const fetchAssignedComplaints = useCallback(async () => {
         setLoading(true);
         try {
             const res = await axios.get(`${API_BASE_URL}/complaints/assigned`, {
@@ -36,32 +44,10 @@ const StaffDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [calculateStats]);
 
-    useEffect(() => {
-        fetchAssignedComplaints();
-        fetchProfile();
-    }, []);
 
-    useEffect(() => {
-    const socket = connectSocket();
-
-    if (!socket) {
-        return;
-    }
-
-    const refreshAssignedComplaints = () => {
-        fetchAssignedComplaints();
-    };
-
-    socket.on('complaint:updated', refreshAssignedComplaints);
-
-    return () => {
-        socket.off('complaint:updated', refreshAssignedComplaints);
-    };
-}, []);
-
-    const fetchProfile = async () => {
+    const fetchProfile = useCallback(async () => {
         try {
             const res = await axios.get(`${API_BASE_URL}/auth/profile`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -70,17 +56,30 @@ const StaffDashboard = () => {
         } catch (err) {
             setError('Failed to fetch profile');
         }
-    };
+    }, []);
 
-    const calculateStats = (complaintsData) => {
-        const stats = {
-            total: complaintsData.length,
-            pending: complaintsData.filter(c => c.status === 'pending').length,
-            inProgress: complaintsData.filter(c => c.status === 'in-progress').length,
-            resolved: complaintsData.filter(c => c.status === 'resolved').length
+
+
+    useEffect(() => {
+        fetchAssignedComplaints();
+        fetchProfile();
+    }, [fetchAssignedComplaints, fetchProfile]);
+
+    useEffect(() => {
+        const socket = connectSocket();
+
+        if (!socket) {
+            return undefined;
+        }
+
+        const refreshAssignedComplaints = () => fetchAssignedComplaints();
+
+        socket.on('complaint:updated', refreshAssignedComplaints);
+
+        return () => {
+            socket.off('complaint:updated', refreshAssignedComplaints);
         };
-        setStats(stats);
-    };
+    }, [fetchAssignedComplaints]);
 
     const handleSelect = (complaint) => {
         setSelectedComplaint(complaint);
@@ -97,7 +96,7 @@ const StaffDashboard = () => {
         if (photo) formData.append('photo', photo);
         await submitStaffUpdate(selectedComplaint, formData);
         setSelectedComplaint(null);
-        setRefresh(r => !r);
+        fetchAssignedComplaints();
         } catch (error) {
             console.error('Error updating complaint:', error);
         }
@@ -183,12 +182,14 @@ const StaffDashboard = () => {
                                 </ul>
                             </div>
                         )}
-                        <button className="btn btn-outline-primary btn-sm" onClick={() => setRefresh(r => !r)}>
+                        <button className="btn btn-outline-primary btn-sm" onClick={fetchAssignedComplaints}>
                             <i className="fas fa-sync-alt me-1"></i>Refresh
                         </button>
                     </div>
                 </div>
             </div>
+
+            {error && <div className="alert alert-danger mb-4">{error}</div>}
 
             {/* Statistics Cards */}
             <div className="row mb-4">
@@ -267,20 +268,20 @@ const StaffDashboard = () => {
                     <div className="card-body">
                         <h6 className="card-title mb-3">Work Progress</h6>
                         <div className="progress mb-2" style={{ height: '25px' }}>
-                            <div 
-                                className="progress-bar bg-success" 
+                            <div
+                                className="progress-bar bg-success"
                                 style={{ width: `${(stats.resolved / stats.total) * 100}%` }}
                             >
                                 {stats.resolved} Resolved
                             </div>
-                            <div 
-                                className="progress-bar bg-warning" 
+                            <div
+                                className="progress-bar bg-warning"
                                 style={{ width: `${(stats.inProgress / stats.total) * 100}%` }}
                             >
                                 {stats.inProgress} In Progress
                             </div>
-                            <div 
-                                className="progress-bar bg-secondary" 
+                            <div
+                                className="progress-bar bg-secondary"
                                 style={{ width: `${(stats.pending / stats.total) * 100}%` }}
                             >
                                 {stats.pending} Pending
@@ -324,7 +325,7 @@ const StaffDashboard = () => {
                                         {new Date(c.date).toLocaleDateString()}
                                     </p>
                                     <p className="card-text small mb-2">
-                                        <strong>Description:</strong> {c.description.length > 100 ? 
+                                        <strong>Description:</strong> {c.description.length > 100 ?
                                             c.description.substring(0, 100) + '...' : c.description}
                                     </p>
                                     {c.raisedBy && (
@@ -352,8 +353,8 @@ const StaffDashboard = () => {
                                     )}
                                 </div>
                                 <div className="card-footer bg-transparent">
-                                    <button 
-                                        className="btn btn-primary btn-sm w-100" 
+                                    <button
+                                        className="btn btn-primary btn-sm w-100"
                                         onClick={() => handleSelect(c)}
                                     >
                                         <i className="fas fa-edit me-1"></i>Update Progress
@@ -386,7 +387,7 @@ const StaffDashboard = () => {
                                                 <div className="border rounded p-3 bg-light">
                                                     <p><strong>Title:</strong> {selectedComplaint.title}</p>
                                                     <p><strong>Category:</strong> {selectedComplaint.category}</p>
-                                                    <p><strong>Status:</strong> 
+                                                    <p><strong>Status:</strong>
                                                         <span className={`badge bg-${statusColors[selectedComplaint.status]} ms-2`}>
                                                             {selectedComplaint.status}
                                                         </span>
@@ -421,11 +422,11 @@ const StaffDashboard = () => {
                                     </div>
                                     <div className="mb-3">
                                                 <label className="form-label fw-bold">Progress Photo (optional)</label>
-                                                <input 
-                                                    type="file" 
-                                                    className="form-control" 
-                                                    accept="image/*" 
-                                                    onChange={e => setPhoto(e.target.files[0])} 
+                                                <input
+                                                    type="file"
+                                                    className="form-control"
+                                                    accept="image/*"
+                                                    onChange={e => setPhoto(e.target.files[0])}
                                                 />
                                                 <small className="text-muted">Upload a photo showing the work progress or completion</small>
                                             </div>
@@ -467,4 +468,4 @@ const StaffDashboard = () => {
     );
 };
 
-export default StaffDashboard; 
+export default StaffDashboard;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
 import API_BASE_URL from '../api/config';
@@ -23,7 +23,16 @@ const MyComplaints = () => {
     const [error, setError] = useState(null);
     const history = useHistory();
 
-    const fetchComplaints = async () => {
+    const calculateStats = useCallback((complaintsData) => {
+        setStats({
+            total: complaintsData.length,
+            pending: complaintsData.filter((complaint) => complaint.status === 'pending').length,
+            inProgress: complaintsData.filter((complaint) => complaint.status === 'in-progress').length,
+            resolved: complaintsData.filter((complaint) => complaint.status === 'resolved').length
+        });
+    }, []);
+
+    const fetchComplaints = useCallback(async () => {
         setLoading(true);
         try {
             const complaintsRes = await axios.get(`${API_BASE_URL}/complaints/my`, {
@@ -35,9 +44,9 @@ const MyComplaints = () => {
             setError('Failed to fetch complaints');
         }
         setLoading(false);
-    };
+    }, [calculateStats]);
 
-    const fetchFeedbacks = async () => {
+    const fetchFeedbacks = useCallback(async () => {
         try {
             const feedbacksRes = await axios.get(`${API_BASE_URL}/feedback`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -46,9 +55,9 @@ const MyComplaints = () => {
         } catch (err) {
             setError('Failed to fetch feedbacks');
         }
-    };
+    }, []);
 
-    const fetchProfile = async () => {
+    const fetchProfile = useCallback(async () => {
         try {
             const profileRes = await axios.get(`${API_BASE_URL}/auth/profile`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -57,43 +66,33 @@ const MyComplaints = () => {
         } catch (err) {
             setError('Failed to fetch profile');
         }
-    };
+    }, []);
 
     useEffect(() => {
-    const socket = connectSocket();
+        const socket = connectSocket();
 
-    if (!socket) {
-        return;
-    }
+        if (!socket) {
+            return undefined;
+        }
 
-    const refreshComplaints = () => {
-        fetchComplaints();
-    };
+        const refreshComplaints = () => fetchComplaints();
 
-    socket.on('complaint:created', refreshComplaints);
-    socket.on('complaint:updated', refreshComplaints);
+        socket.on('complaint:created', refreshComplaints);
+        socket.on('complaint:updated', refreshComplaints);
 
-    return () => {
-        socket.off('complaint:created', refreshComplaints);
-        socket.off('complaint:updated', refreshComplaints);
-    };
-}, []);
+        return () => {
+            socket.off('complaint:created', refreshComplaints);
+            socket.off('complaint:updated', refreshComplaints);
+        };
+    }, [fetchComplaints]);
 
     useEffect(() => {
         fetchComplaints();
         fetchFeedbacks();
         fetchProfile();
-    }, []);
+    }, [fetchComplaints, fetchFeedbacks, fetchProfile]);
 
-    const calculateStats = (complaintsData) => {
-        const stats = {
-            total: complaintsData.length,
-            pending: complaintsData.filter(c => c.status === 'pending').length,
-            inProgress: complaintsData.filter(c => c.status === 'in-progress').length,
-            resolved: complaintsData.filter(c => c.status === 'resolved').length
-        };
-        setStats(stats);
-    };
+
 
     const handleFeedbackChange = (complaintId, field, value) => {
         setFeedbackState(prev => ({
@@ -165,12 +164,14 @@ const MyComplaints = () => {
                 </div>
                 <div className="col-md-4 text-md-end">
                     <div className="d-flex gap-2 justify-content-md-end">
-                        <button className="btn btn-outline-primary btn-sm" onClick={() => window.location.reload()}>
+                        <button className="btn btn-outline-primary btn-sm" onClick={() => { fetchComplaints(); fetchFeedbacks(); fetchProfile(); }}>
                             <i className="fas fa-sync-alt me-1"></i>Refresh
                         </button>
                     </div>
                 </div>
             </div>
+
+            {error && <div className="alert alert-danger mb-4">{error}</div>}
 
             {/* Statistics Cards */}
             <div className="row mb-4">
@@ -248,20 +249,20 @@ const MyComplaints = () => {
                     <div className="card-body">
                         <h6 className="card-title mb-3">Complaint Status Overview</h6>
                         <div className="progress mb-2" style={{ height: '25px' }}>
-                            <div 
-                                className="progress-bar bg-success" 
+                            <div
+                                className="progress-bar bg-success"
                                 style={{ width: `${(stats.resolved / stats.total) * 100}%` }}
                             >
                                 {stats.resolved} Resolved
                             </div>
-                            <div 
-                                className="progress-bar bg-warning" 
+                            <div
+                                className="progress-bar bg-warning"
                                 style={{ width: `${(stats.inProgress / stats.total) * 100}%` }}
                             >
                                 {stats.inProgress} In Progress
                             </div>
-                            <div 
-                                className="progress-bar bg-secondary" 
+                            <div
+                                className="progress-bar bg-secondary"
                                 style={{ width: `${(stats.pending / stats.total) * 100}%` }}
                             >
                                 {stats.pending} Pending
@@ -281,13 +282,13 @@ const MyComplaints = () => {
                         <i className="fas fa-inbox text-muted mb-3" style={{ fontSize: '4rem' }}></i>
                         <h5 className="text-muted">No complaints found</h5>
                         <p className="text-muted">
-                            {complaints.length === 0 
-                                ? "You haven't submitted any complaints yet." 
+                            {complaints.length === 0
+                                ? "You haven't submitted any complaints yet."
                                 : "No complaints match your current filters."}
                         </p>
                 {complaints.length === 0 && (
-                            <button 
-                                className="btn btn-primary" 
+                            <button
+                                className="btn btn-primary"
                                 onClick={() => history.push('/complaints/new')}
                             >
                                 <i className="fas fa-plus me-1"></i>Submit Your First Complaint
@@ -317,7 +318,7 @@ const MyComplaints = () => {
                                         {new Date(c.date).toLocaleDateString()}
                                     </p>
                                     <p className="card-text small mb-2">
-                                        <strong>Description:</strong> {c.description.length > 100 ? 
+                                        <strong>Description:</strong> {c.description.length > 100 ?
                                             c.description.substring(0, 100) + '...' : c.description}
                                     </p>
                                     {c.imageUrl && (
@@ -337,7 +338,7 @@ const MyComplaints = () => {
                                             </small>
                                         </div>
                                     )}
-                                    
+
                                     {/* Feedback form for resolved complaints without feedback */}
                                     {c.status === 'resolved' && !hasFeedback(c._id) && !feedbackState[c._id]?.submitted && (
                                         <div className="mt-3 p-3 bg-light rounded">
@@ -346,10 +347,10 @@ const MyComplaints = () => {
                                             </h6>
                                             <div className="mb-2">
                                                 <label className="form-label small">Rating</label>
-                                                <select 
-                                                    className="form-select form-select-sm" 
-                                                    value={feedbackState[c._id]?.rating || ''} 
-                                                    onChange={e => handleFeedbackChange(c._id, 'rating', e.target.value)} 
+                                                <select
+                                                    className="form-select form-select-sm"
+                                                    value={feedbackState[c._id]?.rating || ''}
+                                                    onChange={e => handleFeedbackChange(c._id, 'rating', e.target.value)}
                                                     required
                                                 >
                                                 <option value="">Select Rating</option>
@@ -362,16 +363,16 @@ const MyComplaints = () => {
                                         </div>
                                         <div className="mb-2">
                                                 <label className="form-label small">Comment (optional)</label>
-                                                <textarea 
-                                                    className="form-control form-control-sm" 
-                                                    value={feedbackState[c._id]?.comment || ''} 
+                                                <textarea
+                                                    className="form-control form-control-sm"
+                                                    value={feedbackState[c._id]?.comment || ''}
                                                     onChange={e => handleFeedbackChange(c._id, 'comment', e.target.value)}
                                                     placeholder="Share your experience..."
                                                     rows="2"
                                                 />
                                             </div>
-                                            <button 
-                                                className="btn btn-success btn-sm w-100" 
+                                            <button
+                                                className="btn btn-success btn-sm w-100"
                                                 onClick={() => submitFeedback(c._id, feedbackState[c._id]?.rating, feedbackState[c._id]?.comment)}
                                             >
                                                 <i className="fas fa-paper-plane me-1"></i>Submit Feedback

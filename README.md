@@ -1,4 +1,4 @@
-<h1 align="center">Smart Campus Complaint System</h1>
+<h1 align="center">Dayananda Sagar College of Engineering<br />Campus Complaint System</h1>
 
 <div align="center">
 
@@ -52,7 +52,7 @@
 
 ## 🎯 Overview
 
-Smart Campus Complaint System is a full-stack web application designed to streamline complaint management in educational institutions. The platform enables students to submit complaints with multimedia attachments, allows staff members to track and resolve assigned issues, and provides administrators with comprehensive oversight through analytics and management tools.
+The Dayananda Sagar College of Engineering Campus Complaint System is a full-stack web application designed to streamline campus complaint management. The platform enables students to submit complaints with multimedia attachments, allows staff members to track and resolve assigned issues, and provides administrators with comprehensive oversight through analytics and management tools.
 
 The system implements a three-tier role-based access control (Student, Staff, Admin) with JWT authentication, real-time status updates, automated email notifications, and a feedback mechanism for continuous improvement.
 
@@ -75,13 +75,13 @@ The system implements a three-tier role-based access control (Student, Staff, Ad
 ### 👥 Staff Operations
 - **Assigned Complaints Dashboard** - View and manage complaints assigned to staff members
 - **Progress Updates** - Add photos and remarks during complaint resolution
-- **Status Updates** - Update complaint status with detailed notes
+- **Progress Updates** - Share photos and remarks on assigned complaints; administrators manage complaint status
 
 ### 👨‍💼 Admin Dashboard
 - **Complaint Overview** - View all complaints with filtering and search capabilities
 - **Staff Assignment** - Assign complaints to available staff members
 - **Statistics & Analytics** - Real-time metrics on complaints, users, and resolution times
-- **User Management** - Access to staff and student user lists
+- **Staff Management** - Administrators create staff accounts and assign complaints
 
 ### 💬 Feedback System
 - **Rating System** - 5-star rating mechanism for resolved complaints
@@ -303,10 +303,10 @@ MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/smart-campus-compl
 - Submit feedback on resolved complaints
 
 #### 👨‍🏫 Staff
-- Register/Login at `/register/staff` or `/login/staff`
+- Log in at `/login/staff` using an account created by an administrator
 - Access dashboard at `/staff/dashboard`
 - View assigned complaints
-- Update complaint status with photos and remarks
+- Add progress updates with photos and remarks to assigned complaints
 - Track resolution progress
 
 #### 👨‍💼 Administrator
@@ -316,7 +316,7 @@ MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/smart-campus-compl
 - Assign complaints to staff members
 - Update complaint statuses
 - View statistics and analytics
-- Manage user accounts
+- Create staff accounts
 
 ### API Endpoints
 
@@ -326,76 +326,36 @@ See [API Documentation](#-api-documentation) for complete endpoint details.
 
 ## 📁 Project Structure
 
-```
+```text
 smart-campus-complaint-system/
-│
-├── client/                          # React frontend application
+├── client/
 │   ├── public/
-│   │   └── index.html              # HTML template
-│   ├── src/
-│   │   ├── api/
-│   │   │   └── auth.js             # API service functions
-│   │   ├── assets/
-│   │   │   └── logo.jpeg           # Application logo
-│   │   ├── components/
-│   │   │   ├── Auth/
-│   │   │   │   ├── Login.jsx       # Login component
-│   │   │   │   └── Register.jsx   # Registration component
-│   │   │   ├── Complaint/
-│   │   │   │   └── ComplaintForm.jsx  # Complaint submission form
-│   │   │   └── Navbar.jsx          # Navigation bar
-│   │   ├── pages/
-│   │   │   ├── AdminDashboard.jsx  # Admin dashboard page
-│   │   │   ├── CenterPage.jsx      # Center page component
-│   │   │   ├── ComplaintDetail.jsx # Complaint details view
-│   │   │   ├── Home.jsx            # Home page
-│   │   │   ├── MyComplaints.jsx    # User's complaints list
-│   │   │   └── StaffDashboard.jsx  # Staff dashboard page
-│   │   ├── App.jsx                 # Main application component
-│   │   ├── index.jsx               # Application entry point
-│   │   └── index.css               # Global styles
-│   ├── package.json                # Frontend dependencies
-│   └── README.md                   # Client-specific README
-│
-├── server/                          # Express backend application
-│   ├── config/
-│   │   └── db.js                   # MongoDB connection configuration
-│   ├── controllers/
-│   │   ├── authController.js       # Authentication logic
-│   │   ├── complaintController.js  # Complaint business logic
-│   │   └── feedbackController.js   # Feedback handling
-│   ├── middleware/
-│   │   ├── authMiddleware.js       # JWT authentication middleware
-│   │   ├── isAdmin.js              # Admin role verification
-│   │   ├── isStaff.js              # Staff role verification
-│   │   └── upload.js               # Multer file upload configuration
-│   ├── models/
-│   │   ├── Complaint.js            # Complaint data model
-│   │   ├── Feedback.js             # Feedback data model
-│   │   └── User.js                 # User data model
-│   ├── routes/
-│   │   ├── auth.js                 # Authentication routes
-│   │   ├── complaint.js            # Complaint routes
-│   │   ├── feedback.js             # Feedback routes
-│   │   └── stats.js                # Statistics routes
-│   ├── uploads/                    # Uploaded files directory
-│   ├── utils/
-│   │   ├── emailTest.js            # Email testing utility
-│   │   └── mailer.js               # Email service configuration
-│   ├── app.js                      # Express application entry point
-│   ├── package.json                # Backend dependencies
-│   └── .env                        # Environment variables (not in repo)
-│
-├── Docs/                            # Documentation
-│   ├── ClientSide.md               # Client-side documentation
-│   └── ServerSide.md               # Server-side documentation
-│
-├── .gitignore                       # Git ignore rules
-├── package.json                     # Root package.json
-└── README.md                        # This file
+│   │   ├── favicon.svg
+│   │   └── index.html
+│   └── src/
+│       ├── api/                # API config, auth calls, and Socket.IO client
+│       ├── assets/             # Retained campus photo asset
+│       ├── components/         # Navigation, authentication, and complaint form
+│       ├── pages/              # Home, student, staff, and admin screens
+│       ├── App.jsx
+│       ├── index.css
+│       └── index.jsx
+├── server/
+│   ├── controllers/            # Auth, complaint, feedback logic
+│   ├── middleware/             # Auth, role, assignment, and upload checks
+│   ├── models/                 # User, complaint, feedback schemas
+│   ├── routes/                 # Auth, complaint, feedback, stats endpoints
+│   ├── utils/                  # Mailer and real-time complaint events
+│   ├── app.js
+│   └── package.json
+├── ClientSide.md
+├── ServerSide.md
+├── package.json
+├── package-lock.json
+├── .gitignore
+└── README.md
 ```
 
----
 
 ## 📚 API Documentation
 
@@ -432,6 +392,22 @@ Content-Type: application/json
 GET /api/auth/profile
 Authorization: Bearer <token>
 ```
+
+#### Create Staff Account (Admin)
+```http
+POST /api/auth/staff
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{
+  "name": "Alex Staff",
+  "email": "alex@campus.edu",
+  "password": "secure-password",
+  "department": "Maintenance"
+}
+```
+
+Staff accounts are created by an administrator; public registration is for students.
 
 ### Complaint Endpoints
 
@@ -549,7 +525,7 @@ git push heroku main
 
 ### Frontend Deployment (Vercel/Netlify)
 
-1. **Update API Base URL** in `client/src/api/auth.js`
+1. **Set the API base URL** using `REACT_APP_API_URL` (for example, `https://your-api.example.com/api`) or the fallback in `client/src/api/config.js`
 2. **Build the application:**
 
 ```bash

@@ -63,10 +63,10 @@ const Home = ({ userEmail, userRole }) => {
         <div>
             {/* Hero Section */}
             <div
-                className="hero-section text-white py-5"
+                className="hero-section py-5"
                 style={{
-                    background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-                    minHeight: '60vh',
+
+
                     display: 'flex',
                     alignItems: 'center'
                 }}
@@ -77,8 +77,8 @@ const Home = ({ userEmail, userRole }) => {
                             <h1 className="display-4 fw-bold mb-4">
                                 Smart Campus Complaint System
                             </h1>
-                            <h3 className="mb-4" style={{ color: '#FFD700' }}>
-                                Kongu Engineering College
+                            <h3 className="mb-4" style={{ color: 'var(--accent-gold)' }}>
+                                Dayananda Sagar College of Engineering
                             </h3>
                             <p className="lead mb-4">
                                 Empowering students, staff, and administrators with a transparent
@@ -385,117 +385,37 @@ const Home = ({ userEmail, userRole }) => {
             {/* Footer */}
             <footer className="bg-dark text-white py-5">
                 <div className="container">
-                    <div className="row">
-                        <div className="col-lg-4 mb-4">
-                            <h5 className="mb-3" style={{ color: '#FFD700' }}>
-                                Kongu Engineering College
+                    <div className="row g-4">
+                        <div className="col-lg-5">
+                            <h5 className="mb-3" style={{ color: 'var(--accent-gold)' }}>
+                                Dayananda Sagar College of Engineering
                             </h5>
-                            <p className="mb-3">
-                                Empowering students with innovative technology solutions for a
-                                better campus experience.
+                            <p className="mb-0 text-white-50">
+                                A clear, reliable way for the campus community to report issues,
+                                follow progress, and help improve everyday campus life.
                             </p>
-                            <div className="d-flex gap-3">
-                                <button className="btn btn-link text-white p-0 border-0 bg-transparent">
-                                    <i className="fab fa-facebook-f"></i>
-                                </button>
-                                <button className="btn btn-link text-white p-0 border-0 bg-transparent">
-                                    <i className="fab fa-twitter"></i>
-                                </button>
-                                <button className="btn btn-link text-white p-0 border-0 bg-transparent">
-                                    <i className="fab fa-linkedin-in"></i>
-                                </button>
-                                <button className="btn btn-link text-white p-0 border-0 bg-transparent">
-                                    <i className="fab fa-instagram"></i>
-                                </button>
-                            </div>
                         </div>
-
-                        <div className="col-lg-2 col-md-6 mb-4">
-                            <h6 className="mb-3" style={{ color: '#FFD700' }}>
-                                Quick Links
+                        <div className="col-sm-6 col-lg-3">
+                            <h6 className="mb-3" style={{ color: 'var(--accent-gold)' }}>
+                                For students
                             </h6>
-                            <ul className="list-unstyled">
-                                <li>
-                                    <button className="btn btn-link text-white-50 text-decoration-none p-0 border-0 bg-transparent">
-                                        About Us
-                                    </button>
-                                </li>
-                                <li>
-                                    <button className="btn btn-link text-white-50 text-decoration-none p-0 border-0 bg-transparent">
-                                        Contact
-                                    </button>
-                                </li>
-                                <li>
-                                    <button className="btn btn-link text-white-50 text-decoration-none p-0 border-0 bg-transparent">
-                                        Help Center
-                                    </button>
-                                </li>
-                                <li>
-                                    <button className="btn btn-link text-white-50 text-decoration-none p-0 border-0 bg-transparent">
-                                        Privacy Policy
-                                    </button>
-                                </li>
-                            </ul>
+                            <p className="mb-2 text-white-50">Submit campus complaints with the details teams need.</p>
+                            <p className="mb-0 text-white-50">Follow updates and resolution status in one place.</p>
                         </div>
-
-                        <div className="col-lg-3 col-md-6 mb-4">
-                            <h6 className="mb-3" style={{ color: '#FFD700' }}>
-                                Departments
+                        <div className="col-sm-6 col-lg-4">
+                            <h6 className="mb-3" style={{ color: 'var(--accent-gold)' }}>
+                                For campus teams
                             </h6>
-                            <ul className="list-unstyled">
-                                <li>
-                                    <button className="btn btn-link text-white-50 text-decoration-none p-0 border-0 bg-transparent">
-                                        Computer Science
-                                    </button>
-                                </li>
-                                <li>
-                                    <button className="btn btn-link text-white-50 text-decoration-none p-0 border-0 bg-transparent">
-                                        Information Technology
-                                    </button>
-                                </li>
-                                <li>
-                                    <button className="btn btn-link text-white-50 text-decoration-none p-0 border-0 bg-transparent">
-                                        Mechanical Engineering
-                                    </button>
-                                </li>
-                                <li>
-                                    <button className="btn btn-link text-white-50 text-decoration-none p-0 border-0 bg-transparent">
-                                        Electrical Engineering
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div className="col-lg-3 mb-4">
-                            <h6 className="mb-3" style={{ color: '#FFD700' }}>
-                                Contact Info
-                            </h6>
-                            <p className="mb-2">
-                                <i className="fas fa-map-marker-alt me-2"></i>
-                                Perundurai, Erode, Tamil Nadu
-                            </p>
-                            <p className="mb-2">
-                                <i className="fas fa-phone me-2"></i>
-                                +91 4294 226565
-                            </p>
-                            <p className="mb-2">
-                                <i className="fas fa-envelope me-2"></i>
-                                info@kongu.ac.in
-                            </p>
+                            <p className="mb-2 text-white-50">Review assigned issues and share progress with students.</p>
+                            <p className="mb-0 text-white-50">Keep assignments, updates, and outcomes organized.</p>
                         </div>
                     </div>
-
-                    <hr className="my-4" />
-
-                    <div className="row align-items-center">
-                        <div className="col-md-6">
-                            <p className="mb-0">
-                                &copy; 2025 Kongu Engineering College. All rights reserved.
-                            </p>
-                        </div>
-                        <div className="col-md-6 text-md-end">
-                            <p className="mb-0">Smart Campus Complaint System v1.0</p>
-                        </div>
+                    <hr className="my-4 border-light opacity-25" />
+                    <div className="d-flex flex-column flex-md-row justify-content-between gap-2">
+                        <small className="text-white-50">
+                            &copy; {new Date().getFullYear()} Dayananda Sagar College of Engineering.
+                        </small>
+                        <small className="text-white-50">Campus Complaint System</small>
                     </div>
                 </div>
             </footer>

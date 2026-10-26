@@ -35,6 +35,16 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    const [staffForm, setStaffForm] = useState({
+        name: '',
+        email: '',
+        password: '',
+        department: ''
+    });
+    const [staffFormError, setStaffFormError] = useState('');
+    const [staffFormSuccess, setStaffFormSuccess] = useState('');
+    const [creatingStaff, setCreatingStaff] = useState(false);
+
     useEffect(() => {
         fetchComplaints();
         fetchStaff();
@@ -69,6 +79,52 @@ const AdminDashboard = () => {
         } catch (err) {
             console.error('Error fetching staff:', err);
             setStaffList([]);
+        }
+    };
+
+    const handleStaffFormChange = (e) => {
+        const { name, value } = e.target;
+
+        setStaffForm((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleCreateStaff = async (e) => {
+        e.preventDefault();
+        setStaffFormError('');
+        setStaffFormSuccess('');
+        setCreatingStaff(true);
+
+        try {
+            const res = await axios.post(
+                `${API_BASE_URL}/auth/staff`,
+                staffForm,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    }
+                }
+            );
+
+            setStaffFormSuccess(
+                res.data.message || 'Staff account created.'
+            );
+            setStaffForm({
+                name: '',
+                email: '',
+                password: '',
+                department: ''
+            });
+            await fetchStaff();
+        } catch (err) {
+            setStaffFormError(
+                err.response?.data?.message ||
+                    'Could not create staff account.'
+            );
+        } finally {
+            setCreatingStaff(false);
         }
     };
 
@@ -282,8 +338,7 @@ const AdminDashboard = () => {
                                                         <div
                                                             className="mb-2 text-muted"
                                                             style={{
-                                                                fontSize:
-                                                                    '0.9em'
+                                                                fontSize: '0.9em'
                                                             }}
                                                         >
                                                             {update.updatedAt
@@ -297,14 +352,11 @@ const AdminDashboard = () => {
                                                         </div>
                                                         {update.photoUrl && (
                                                             <img
-                                                                src={
-                                                                    update.photoUrl
-                                                                }
+                                                                src={update.photoUrl}
                                                                 alt="Staff update"
                                                                 className="img-fluid rounded mt-2"
                                                                 style={{
-                                                                    maxHeight:
-                                                                        '120px'
+                                                                    maxHeight: '120px'
                                                                 }}
                                                             />
                                                         )}
@@ -370,6 +422,115 @@ const AdminDashboard = () => {
                 >
                     Resolved
                 </button>
+            </div>
+
+            <div className="card shadow-sm mb-4">
+                <div className="card-body">
+                    <h4 className="mb-3">Create Staff Account</h4>
+
+                    {staffFormError && (
+                        <div className="alert alert-danger">
+                            {staffFormError}
+                        </div>
+                    )}
+                    {staffFormSuccess && (
+                        <div className="alert alert-success">
+                            {staffFormSuccess}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleCreateStaff}>
+                        <div className="row g-3">
+                            <div className="col-md-6">
+                                <label className="form-label">Full Name</label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    className="form-control"
+                                    value={staffForm.name}
+                                    onChange={handleStaffFormChange}
+                                    autoComplete="name"
+                                    required
+                                />
+                            </div>
+
+                            <div className="col-md-6">
+                                <label className="form-label">Email</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    className="form-control"
+                                    value={staffForm.email}
+                                    onChange={handleStaffFormChange}
+                                    autoComplete="email"
+                                    required
+                                />
+                            </div>
+
+                            <div className="col-md-6">
+                                <label className="form-label">Password</label>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    className="form-control"
+                                    value={staffForm.password}
+                                    onChange={handleStaffFormChange}
+                                    autoComplete="new-password"
+                                    minLength="6"
+                                    required
+                                />
+                            </div>
+
+                            <div className="col-md-6">
+                                <label className="form-label">
+                                    Department/Area
+                                </label>
+                                <select
+                                    name="department"
+                                    className="form-select"
+                                    value={staffForm.department}
+                                    onChange={handleStaffFormChange}
+                                    required
+                                >
+                                    <option value="">
+                                        Select Department/Area
+                                    </option>
+                                    <option value="IT">IT</option>
+                                    <option value="CSE">CSE</option>
+                                    <option value="CSD">CSD</option>
+                                    <option value="MECH">MECH</option>
+                                    <option value="ECE">ECE</option>
+                                    <option value="EEE">EEE</option>
+                                    <option value="EIE">EIE</option>
+                                    <option value="AUTOMOB">AUTOMOB</option>
+                                    <option value="MTS">MTS</option>
+                                    <option value="AIDS">AIDS</option>
+                                    <option value="AIML">AIML</option>
+                                    <option value="CHEM">CHEM</option>
+                                    <option value="FT">FT</option>
+                                    <option value="Hostel">Hostel</option>
+                                    <option value="Transport">Transport</option>
+                                    <option value="Mess">Mess</option>
+                                    <option value="Maintenance">
+                                        Maintenance
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div className="col-12">
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={creatingStaff}
+                                >
+                                    {creatingStaff
+                                        ? 'Creating...'
+                                        : 'Create Staff Account'}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <div className="card shadow-sm mb-4">

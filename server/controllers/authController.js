@@ -1,139 +1,272 @@
-// filepath: smart-campus-complaint-system/server/controllers/authController.js
-
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Register a new user
+const validateAccountDetails = (email, password, name, department) => {
+    if (
+        typeof email !== 'string' ||
+        typeof password !== 'string' ||
+        typeof name !== 'string' ||
+        typeof department !== 'string' ||
+        !email.trim() ||
+        !password ||
+        !name.trim() ||
+        !department.trim()
+    ) {
+        return 'Email, password, name, and department are required.';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email.trim())) {
+        return 'Please enter a valid email address.';
+    }
+
+    if (password.length < 6) {
+        return 'Password must be at least 6 characters long.';
+    }
+
+    return null;
+};
+
+const createAccount = async ({ email, password, role, name, department }) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingUser = await User.findOne({ email: normalizedEmail });
+
+    if (existingUser) {
+        return null;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({
+        email: normalizedEmail,
+        password: hashedPassword,
+        role,
+        name: name.trim(),
+        department: department.trim()
+    });
+
+    await user.save();
+    return user;
+};
+
+// Public registration: students only
 const register = async (req, res) => {
     const { email, password, role, name, department } = req.body;
 
+    if (role !== 'student') {
+        return res.status(403).json({
+            message: 'Staff accounts can only be created by an admin.'
+        });
+    }
+
+    const validationError = validateAccountDetails(
+        email,
+        password,
+        name,
+        department
+    );
+
+    if (validationError) {
+        return res.status(400).json({ message: validationError });
+    }
+
     try {
-        // Validate required fields
-        if (!email || !password || !role || !name || !department) {
-            return res.status(400).json({ 
-                message: 'All fields are required: email, password, role, name, department' 
+        const user = await createAccount({
+            email,
+            password,
+            role: 'student',
+            name,
+            department
+        });
+
+        if (!user) {
+            return res.status(409).json({
+                message: 'A user with this email already exists.'
             });
         }
 
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ message: 'Please enter a valid email address' });
+        res.status(201).json({ message: 'Student account created.' });
+    } catch (error) {
+        console.error('Student registration error:', error);
+
+        if (error.code === 11000) {
+            return res.status(409).json({
+                message: 'A user with this email already exists.'
+            });
         }
 
-        // Validate password length
-        if (password.length < 6) {
-            return res.status(400).json({ message: 'Password must be at least 6 characters long' });
-        }
+        res.status(500).json({
+            message: 'Server error during registration.'
+        });
+    }
+};
 
-        // Validate role
-        if (!['student', 'staff'].includes(role)) {
-            return res.status(400).json({ message: 'Invalid role. Must be student or staff' });
-        }
+// Admin-only handler: create a staff account
+const createStaff = async (req, res) => {
+    const { email, password, name, department } = req.body;
 
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: 'User with this email already exists' });
-        }
+    const validationError = validateAccountDetails(
+        email,
+        password,
+        name,
+        department
+    );
 
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
+    if (validationError) {
+        return res.status(400).json({ message: validationError });
+    }
 
-        // Create a new user
-        const newUser = new User({
-            email: email.trim(),
-            password: hashedPassword,
-            role,
-            name: name.trim(),
-            department: department.trim()
+    try {
+        const user = await createAccount({
+            email,
+            password,
+            role: 'staff',
+            name,
+            department
         });
 
-        await newUser.save();
-        console.log('User registered successfully:', { email, role, name, department });
-        res.status(201).json({ message: 'User registered successfully' });
-    } catch (error) {
-        console.error('Registration error:', error);
-        if (error.code === 11000) {
-            return res.status(400).json({ message: 'User with this email already exists' });
+        if (!user) {
+            return res.status(409).json({
+                message: 'A user with this email already exists.'
+            });
         }
-        res.status(500).json({ message: 'Server error during registration' });
+
+        res.status(201).json({
+            message: 'Staff account created.',
+            staff: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                department: user.department
+            }
+        });
+    } catch (error) {
+        console.error('Staff account creation error:', error);
+
+        if (error.code === 11000) {
+            return res.status(409).json({
+                message: 'A user with this email already exists.'
+            });
+        }
+
+        res.status(500).json({
+            message: 'Server error while creating staff account.'
+        });
     }
 };
 
 // Login a user
 const login = async (req, res) => {
     const { email, password, role } = req.body;
+    const normalizedEmail =
+        typeof email === 'string' ? email.trim().toLowerCase() : '';
 
     try {
         if (role === 'admin') {
-            // Only allow the admin from .env
+            const configuredAdminEmail =
+                process.env.ADMIN_EMAIL?.trim().toLowerCase();
+            const configuredAdminPassword = process.env.ADMIN_PASSWORD;
+
             if (
-                email === process.env.ADMIN_EMAIL &&
-                password === process.env.ADMIN_PASSWORD
+                configuredAdminEmail &&
+                configuredAdminPassword &&
+                normalizedEmail === configuredAdminEmail &&
+                password === configuredAdminPassword
             ) {
-                // You can generate a token for admin (no DB lookup needed)
                 const token = jwt.sign(
-                    { id: 'admin', email, role: 'admin', name: 'Admin' },
+                    {
+                        id: 'admin',
+                        email: configuredAdminEmail,
+                        role: 'admin',
+                        name: 'Admin'
+                    },
                     process.env.JWT_SECRET,
                     { expiresIn: '1h' }
                 );
+
                 return res.status(200).json({
                     token,
-                    user: { id: 'admin', email, role: 'admin', name: 'Admin' }
+                    user: {
+                        id: 'admin',
+                        email: configuredAdminEmail,
+                        role: 'admin',
+                        name: 'Admin'
+                    }
                 });
-            } else {
-                return res.status(400).json({ message: 'Invalid admin credentials' });
             }
+
+            return res.status(400).json({
+                message: 'Invalid admin credentials.'
+            });
         }
 
-        // For non-admin users, proceed as usual
-        const user = await User.findOne({ email, role });
+        if (!['student', 'staff'].includes(role)) {
+            return res.status(400).json({ message: 'Invalid role.' });
+        }
+
+        const user = await User.findOne({
+            email: normalizedEmail,
+            role
+        });
+
         if (!user) {
-            return res.status(400).json({ message: 'Email not found' });
+            return res.status(400).json({ message: 'Email not found.' });
         }
+
         const isMatch = await bcrypt.compare(password, user.password);
+
         if (!isMatch) {
-            return res.status(400).json({ message: 'Incorrect password' });
+            return res.status(400).json({ message: 'Incorrect password.' });
         }
+
         const token = jwt.sign(
-            { id: user._id, email: user.email, role: user.role, name: user.name },
+            {
+                id: user._id,
+                email: user.email,
+                role: user.role,
+                name: user.name
+            },
             process.env.JWT_SECRET,
             { expiresIn: '1h' }
         );
-        res.status(200).json({ token, user: { id: user._id, email: user.email, role: user.role, name: user.name } });
+
+        res.status(200).json({
+            token,
+            user: {
+                id: user._id,
+                email: user.email,
+                role: user.role,
+                name: user.name
+            }
+        });
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Server error during login.' });
     }
 };
 
-// Get user statistics (public)
+// Get user statistics
 const getUserStats = async (req, res) => {
     try {
-        console.log('getUserStats called');
-        
         const totalUsers = await User.countDocuments();
-        console.log('Total users:', totalUsers);
-        
         const studentCount = await User.countDocuments({ role: 'student' });
-        console.log('Student count:', studentCount);
-        
         const staffCount = await User.countDocuments({ role: 'staff' });
-        console.log('Staff count:', staffCount);
-        
-        const stats = {
+
+        res.json({
             total: totalUsers,
             students: studentCount,
             staff: staffCount
-        };
-        
-        console.log('Returning user stats:', stats);
-        res.json(stats);
+        });
     } catch (error) {
         console.error('Error in getUserStats:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
 
-module.exports = { register, login, getUserStats };
+module.exports = {
+    register,
+    createStaff,
+    login,
+    getUserStats
+};

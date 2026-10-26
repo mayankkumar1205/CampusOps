@@ -1,632 +1,103 @@
-<h1 align="center">Dayananda Sagar College of Engineering<br />Campus Complaint System</h1>
+# DSCE Campus Complaint System
 
-<div align="center">
+A full-stack campus complaint app for Dayananda Sagar College of Engineering. Students report and track issues, admins manage staff and assignments, and staff post progress updates. Connected dashboards receive changes in real time.
 
-![MERN Stack](https://img.shields.io/badge/Stack-MERN-green)
-![Node.js](https://img.shields.io/badge/Node.js-18+-green)
-![React](https://img.shields.io/badge/React-17.0-blue)
-![MongoDB](https://img.shields.io/badge/MongoDB-5.0+-green)
-![License](https://img.shields.io/badge/License-MIT-blue)
+## Features
 
-**A comprehensive complaint management platform for educational institutions with role-based access control, real-time tracking, and automated workflows.**
+- Role-based student, staff, and admin access with JWT authentication.
+- Complaint submission with category, due date, description, and optional image.
+- Admin tools for staff account creation, assignments, workload, and status updates.
+- Staff progress notes and optional photos.
+- Complaint history, student feedback, email notifications, and Socket.IO live updates.
 
-[Features](#-features) • [Tech Stack](#-tech-stack) • [Installation](#-installation) • [Usage](#-usage) • [API Documentation](#-api-documentation) • [Contributing](#-contributing)
-
-</div>
-
----
-
-##  Screenshots
-
-<div align="center">
-  <img 
-    src="https://github.com/user-attachments/assets/48127d29-d387-4ce2-85cb-0a2356d05b18"
-    alt="Smart Campus Complaint System Landing Page"
-    width="900"
-  />
-  <p><i>Smart Campus Complaint System – Landing Page</i></p>
-</div>
-
-
----
-
-## 📋 Table of Contents
-
-- [Overview](#-overview)
-- [Screenshots](#-screenshots)
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Architecture](#-architecture)
-- [Prerequisites](#-prerequisites)
-- [Installation](#-installation)
-- [Configuration](#-configuration)
-- [Usage](#-usage)
-- [Project Structure](#-project-structure)
-- [API Documentation](#-api-documentation)
-- [Deployment](#-deployment)
-- [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-- [License](#-license)
-
----
-
-## 🎯 Overview
-
-The Dayananda Sagar College of Engineering Campus Complaint System is a full-stack web application designed to streamline campus complaint management. The platform enables students to submit complaints with multimedia attachments, allows staff members to track and resolve assigned issues, and provides administrators with comprehensive oversight through analytics and management tools.
-
-The system implements a three-tier role-based access control (Student, Staff, Admin) with JWT authentication, real-time status updates, automated email notifications, and a feedback mechanism for continuous improvement.
-
----
-
-## ✨ Features
-
-### 🔐 Authentication & Authorization
-- **Role-Based Access Control** - Separate authentication flows for Students, Staff, and Administrators
-- **JWT Token Management** - Secure session handling with JSON Web Tokens
-- **Password Encryption** - bcryptjs hashing for secure credential storage
-- **Protected Routes** - Middleware-based route protection based on user roles
-
-### 📝 Complaint Management
-- **Complaint Submission** - Create complaints with title, description, category, urgency level, and image attachments
-- **Status Tracking** - Three-tier status workflow: `pending` → `in-progress` → `resolved`
-- **Image Upload** - Multer-based file handling for complaint evidence
-- **Urgency Levels** - Configurable due dates (1, 2, or 3+ days)
-
-### 👥 Staff Operations
-- **Assigned Complaints Dashboard** - View and manage complaints assigned to staff members
-- **Progress Updates** - Add photos and remarks during complaint resolution
-- **Progress Updates** - Share photos and remarks on assigned complaints; administrators manage complaint status
-
-### 👨‍💼 Admin Dashboard
-- **Complaint Overview** - View all complaints with filtering and search capabilities
-- **Staff Assignment** - Assign complaints to available staff members
-- **Statistics & Analytics** - Real-time metrics on complaints, users, and resolution times
-- **Staff Management** - Administrators create staff accounts and assign complaints
-
-### 💬 Feedback System
-- **Rating System** - 5-star rating mechanism for resolved complaints
-- **Comments** - Textual feedback submission
-- **Performance Tracking** - Monitor staff and system performance
-
-### 📧 Notifications
-- **Email Integration** - Automated email notifications via Nodemailer
-- **Resolution Alerts** - Notify users when complaints are resolved
-
----
-
-## 🛠 Tech Stack
-
-### Frontend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **React** | 17.0.2 | UI framework |
-| **React Router DOM** | 5.3.4 | Client-side routing |
-| **Axios** | 0.21.4 | HTTP client for API calls |
-| **Bootstrap** | 5.3.7 | CSS framework for responsive design |
-| **JWT Decode** | 4.0.0 | Token decoding for authentication |
-
-### Backend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Node.js** | 18+ | Runtime environment |
-| **Express.js** | 4.21.2 | Web application framework |
-| **Mongoose** | 5.13.23 | MongoDB object modeling |
-| **jsonwebtoken** | 8.5.1 | JWT token generation and verification |
-| **bcryptjs** | 2.4.3 | Password hashing |
-
-### Database
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **MongoDB** | 5.0+ | NoSQL database for data persistence |
-
-### Tools & Utilities
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Multer** | 1.4.2 | File upload middleware |
-| **Nodemailer** | 7.0.4 | Email service integration |
-| **Socket.io** | 4.0.0 | Real-time bidirectional communication |
-| **dotenv** | 10.0.0 | Environment variable management |
-| **CORS** | 2.8.5 | Cross-origin resource sharing |
-
----
-
-## 🏗 Architecture
-
-The application follows a **three-tier architecture** pattern:
-
-```
-┌─────────────────┐
-│   React Client  │  (Port 3000)
-│   (Frontend)    │
-└────────┬────────┘
-         │ HTTP/REST API
-         │ (Axios)
-┌────────▼────────┐
-│  Express Server │  (Port 5000)
-│   (Backend)     │
-└────────┬────────┘
-         │ Mongoose ODM
-┌────────▼────────┐
-│    MongoDB      │
-│   (Database)    │
-└─────────────────┘
-```
-
-**Data Flow:**
-1. **Frontend (React)** - User interactions trigger API calls via Axios
-2. **Backend (Express)** - RESTful API endpoints handle business logic and authentication
-3. **Database (MongoDB)** - Data persistence with Mongoose schemas
-4. **Authentication** - JWT tokens stored in localStorage, validated via middleware
-5. **File Storage** - Multer processes uploads to `server/uploads/` directory
-6. **Email Service** - Nodemailer sends notifications asynchronously
-
----
-
-## 📦 Prerequisites
-
-Before installation, ensure you have the following installed:
-
-- **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
-- **npm** (v9 or higher) - Comes with Node.js
-- **MongoDB** (v5.0 or higher) - [Download](https://www.mongodb.com/try/download/community) or use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-- **Git** - [Download](https://git-scm.com/)
-
----
-
-## 🚀 Installation
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/tharani-2006/smart-campus-complaint-system.git
-cd smart-campus-complaint-system
-```
-
-### 2. Install Dependencies
-
-Install server dependencies:
-
-```bash
-cd server
-npm install
-```
-
-Install client dependencies:
-
-```bash
-cd ../client
-npm install
-```
-
-### 3. Configure Environment Variables
-
-Create a `.env` file in the `server` directory:
-
-```bash
-cd ../server
-touch .env
-```
-
-Add the following environment variables (see [Configuration](#-configuration) for details):
-
-```env
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
-PORT=5000
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
-ADMIN_EMAIL=admin@campus.edu
-ADMIN_PASSWORD=secure_admin_password
-```
-
-### 4. Start MongoDB
-
-**Local MongoDB:**
-```bash
-# Windows
-net start MongoDB
-
-# macOS/Linux
-sudo systemctl start mongod
-# or
-mongod
-```
-
-**MongoDB Atlas:**
-- Use your Atlas connection string in `MONGO_URI`
-
-### 5. Run the Application
-
-**Start the backend server:**
-```bash
-cd server
-npm start
-# Server runs on http://localhost:5000
-```
-
-**Start the frontend client (in a new terminal):**
-```bash
-cd client
-npm start
-# Client runs on http://localhost:3000
-```
-
-The application will automatically open in your default browser at `http://localhost:3000`.
-
----
-
-## ⚙️ Configuration
-
-### Environment Variables
-
-Create a `.env` file in the `server` directory with the following variables:
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/campus-complaints` or Atlas URI |
-| `JWT_SECRET` | Secret key for JWT token signing | `your_super_secret_jwt_key_here` |
-| `PORT` | Server port number | `5000` |
-| `EMAIL_USER` | Email address for sending notifications | `noreply@campus.edu` |
-| `EMAIL_PASS` | Email service app password | `your_app_specific_password` |
-| `ADMIN_EMAIL` | Default admin email for login | `admin@campus.edu` |
-| `ADMIN_PASSWORD` | Default admin password | `SecurePassword123!` |
-
-### MongoDB Connection
-
-**Local MongoDB:**
-```env
-MONGO_URI=mongodb://localhost:27017/smart-campus-complaints
-```
-
-**MongoDB Atlas:**
-```env
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/smart-campus-complaints?retryWrites=true&w=majority
-```
-
-### Email Configuration (Gmail Example)
-
-1. Enable 2-Step Verification on your Google Account
-2. Generate an App Password: [Google App Passwords](https://myaccount.google.com/apppasswords)
-3. Use the generated password in `EMAIL_PASS`
-
----
-
-## 💻 Usage
-
-### User Roles
-
-#### 👨‍🎓 Student
-- Register/Login at `/register/student` or `/login/student`
-- Submit new complaints at `/complaints/new`
-- View personal complaints at `/my-complaints`
-- Track complaint status and updates
-- Submit feedback on resolved complaints
-
-#### 👨‍🏫 Staff
-- Log in at `/login/staff` using an account created by an administrator
-- Access dashboard at `/staff/dashboard`
-- View assigned complaints
-- Add progress updates with photos and remarks to assigned complaints
-- Track resolution progress
-
-#### 👨‍💼 Administrator
-- Login at `/login/admin` (credentials from `.env`)
-- Access admin dashboard at `/admin/dashboard`
-- View all complaints across the system
-- Assign complaints to staff members
-- Update complaint statuses
-- View statistics and analytics
-- Create staff accounts
-
-### API Endpoints
-
-See [API Documentation](#-api-documentation) for complete endpoint details.
-
----
-
-## 📁 Project Structure
-
-```text
-smart-campus-complaint-system/
-├── client/
-│   ├── public/
-│   │   ├── favicon.svg
-│   │   └── index.html
-│   └── src/
-│       ├── api/                # API config, auth calls, and Socket.IO client
-│       ├── assets/             # Retained campus photo asset
-│       ├── components/         # Navigation, authentication, and complaint form
-│       ├── pages/              # Home, student, staff, and admin screens
-│       ├── App.jsx
-│       ├── index.css
-│       └── index.jsx
-├── server/
-│   ├── controllers/            # Auth, complaint, feedback logic
-│   ├── middleware/             # Auth, role, assignment, and upload checks
-│   ├── models/                 # User, complaint, feedback schemas
-│   ├── routes/                 # Auth, complaint, feedback, stats endpoints
-│   ├── utils/                  # Mailer and real-time complaint events
-│   ├── app.js
-│   └── package.json
-├── ClientSide.md
-├── ServerSide.md
-├── package.json
-├── package-lock.json
-├── .gitignore
-└── README.md
-```
-
-
-## 📚 API Documentation
-
-### Authentication Endpoints
-
-#### Register User
-```http
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "name": "John Doe",
-  "email": "john@student.edu",
-  "password": "password123",
-  "department": "Computer Science",
-  "role": "student"
-}
-```
-
-#### Login
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "john@student.edu",
-  "password": "password123",
-  "role": "student"
-}
-```
-
-#### Get User Profile
-```http
-GET /api/auth/profile
-Authorization: Bearer <token>
-```
-
-#### Create Staff Account (Admin)
-```http
-POST /api/auth/staff
-Authorization: Bearer <admin-token>
-Content-Type: application/json
-
-{
-  "name": "Alex Staff",
-  "email": "alex@campus.edu",
-  "password": "secure-password",
-  "department": "Maintenance"
-}
-```
-
-Staff accounts are created by an administrator; public registration is for students.
-
-### Complaint Endpoints
-
-#### Create Complaint
-```http
-POST /api/complaints
-Authorization: Bearer <token>
-Content-Type: multipart/form-data
-
-{
-  "title": "Broken Wi-Fi in Library",
-  "description": "Wi-Fi connection is unstable",
-  "category": "Infrastructure",
-  "dueInDays": 2,
-  "image": <file>
-}
-```
-
-#### Get User's Complaints
-```http
-GET /api/complaints/my
-Authorization: Bearer <token>
-```
-
-#### Get All Complaints (Admin)
-```http
-GET /api/complaints
-Authorization: Bearer <token>
-```
-
-#### Get Complaint by ID
-```http
-GET /api/complaints/:id
-Authorization: Bearer <token>
-```
-
-#### Assign Complaint to Staff
-```http
-PUT /api/complaints/:id/assign
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "staffId": "staff_user_id"
-}
-```
-
-#### Update Complaint Status
-```http
-PUT /api/complaints/:id/status
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "status": "in-progress"
-}
-```
-
-#### Staff Update Complaint
-```http
-POST /api/complaints/:id/staff-update
-Authorization: Bearer <token>
-Content-Type: multipart/form-data
-
-{
-  "remarks": "Issue resolved",
-  "photo": <file>
-}
-```
-
-### Statistics Endpoints
-
-#### Get Complaint Statistics
-```http
-GET /api/stats/complaints
-```
-
-#### Get User Statistics
-```http
-GET /api/stats/users
-```
-
-### Feedback Endpoints
-
-#### Submit Feedback
-```http
-POST /api/feedback
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "complaintId": "complaint_id",
-  "rating": 5,
-  "comment": "Excellent service!"
-}
-```
-
----
-
-## 🚢 Deployment
-
-### Backend Deployment (Render/Heroku)
-
-1. **Set Environment Variables** in your hosting platform
-2. **Update MongoDB URI** to production database
-3. **Configure CORS** to allow frontend domain
-4. **Deploy:**
-
-```bash
-cd server
-git push heroku main
-# or
-# Deploy to Render via GitHub integration
-```
-
-### Frontend Deployment (Vercel/Netlify)
-
-1. **Set the API base URL** using `REACT_APP_API_URL` (for example, `https://your-api.example.com/api`) or the fallback in `client/src/api/config.js`
-2. **Build the application:**
-
-```bash
-cd client
-npm run build
-```
-
-3. **Deploy the `build` folder** to your hosting platform
-
-### Environment Variables for Production
-
-Ensure all environment variables are set in your hosting platform's dashboard.
-
----
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### MongoDB Connection Error
-```
-Error: MongoDB connection failed
-```
-**Solution:** Verify `MONGO_URI` in `.env` file and ensure MongoDB is running.
-
-#### Port Already in Use
-```
-Error: Port 5000 is already in use
-```
-**Solution:** Change `PORT` in `.env` or kill the process using the port:
-```bash
-# Windows
-netstat -ano | findstr :5000
-taskkill /PID <PID> /F
-
-# macOS/Linux
-lsof -ti:5000 | xargs kill
-```
-
-#### JWT Token Expired
-```
-Error: Token expired
-```
-**Solution:** Log out and log in again to generate a new token.
-
-#### File Upload Fails
-```
-Error: Multer error
-```
-**Solution:** Ensure `server/uploads/` directory exists and has write permissions.
-
-#### CORS Error
-```
-Error: CORS policy blocked
-```
-**Solution:** Verify CORS is enabled in `server/app.js` and frontend URL is whitelisted.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. **Fork the repository**
-2. **Create a feature branch:**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Commit your changes:**
-   ```bash
-   git commit -m 'Add some amazing feature'
-   ```
-4. **Push to the branch:**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-5. **Open a Pull Request**
-
-### Development Guidelines
-
-- Follow existing code style and conventions
-- Write clear commit messages
-- Add comments for complex logic
-- Test your changes thoroughly
-- Update documentation as needed
-
----
-
-## 🙏 Acknowledgments
-
-- MongoDB for the database solution
-- React team for the amazing framework
-- Express.js community for the robust backend framework
-- All contributors and users of this project
-
----
-
-<div align="center">
-
-**Made with ❤️ by tharani-2006**
-
-⭐ Star this repo if you find it helpful!
-
-</div>
+## Technology
+
+React 17, React Router 5, Bootstrap 5, Axios, Socket.IO Client, Node.js, Express, MongoDB, Mongoose, JWT, Multer, and Nodemailer.
+
+## Run locally
+
+You need Node.js, npm, and a MongoDB database (local or Atlas).
+
+1. Clone https://github.com/mayankkumar1205/CampusOps.git
+2. Install server dependencies: from the server folder run npm install.
+3. Install client dependencies: from the client folder run npm install.
+4. Create server/.env with your own values for MONGO_URI, JWT_SECRET, PORT=5000, ADMIN_EMAIL, ADMIN_PASSWORD, and CLIENT_ORIGIN=http://localhost:3000. EMAIL_USER and EMAIL_PASS are optional.
+5. In separate terminals, run npm start from server and client.
+6. Open http://localhost:3000. Local API defaults to http://localhost:5000/api.
+
+Never commit .env or put secrets in frontend variables. Use an email app password, not your regular email password.
+
+## Roles
+
+- Student: self-registers, submits complaints, tracks progress, and can leave feedback.
+- Admin: signs in with ADMIN_EMAIL and ADMIN_PASSWORD; creates staff accounts, assigns complaints, and updates status.
+- Staff: uses an account created by an admin to see assignments and post progress.
+
+Staff and admin accounts cannot be publicly registered. See DEMO.md for a short presentation walkthrough.
+
+## Deploy on Render
+
+Deploy the API and frontend as separate services from the same GitHub repository. Use MongoDB Atlas or another MongoDB database reachable by the API.
+
+### Backend API (Web Service)
+
+In Render choose New > Web Service, connect mayankkumar1205/CampusOps, and set:
+
+| Setting | Value |
+| --- | --- |
+| Branch | main |
+| Root Directory | server |
+| Build Command | npm install |
+| Start Command | npm start |
+
+In the backend Environment settings add MONGO_URI, JWT_SECRET, ADMIN_EMAIL, and ADMIN_PASSWORD. Add CLIENT_ORIGIN after deploying the frontend. EMAIL_USER and EMAIL_PASS are optional. Deploy, copy the backend URL, then open the backend URL plus /api/test. A working API returns JSON saying the server is working.
+
+### Frontend (Static Site)
+
+Choose New > Static Site and connect the same repository:
+
+| Setting | Value |
+| --- | --- |
+| Branch | main |
+| Root Directory | client |
+| Build Command | npm install && npm run build |
+| Publish Directory | build |
+
+Add build variable REACT_APP_API_URL with the backend URL ending in /api, for example https://your-api.onrender.com/api. React embeds this value during build, so redeploy the frontend after changes. Socket.IO derives its address automatically.
+
+In Redirects/Rewrites, add a Rewrite from /* to /index.html so React Router pages work when refreshed directly.
+
+### Connect and verify
+
+1. Copy the frontend origin, such as https://your-site.onrender.com, without a trailing slash.
+2. Set backend CLIENT_ORIGIN to that exact origin, save, and redeploy.
+3. Check the backend /api/test endpoint.
+4. Register a test student and submit a complaint.
+5. As admin, assign it to a staff account.
+6. As staff in another browser, post an update and confirm the other dashboard updates.
+7. Resolve the complaint as admin and confirm the student's view changes.
+8. Refresh a direct route such as /my-complaints.
+
+See Render's Node/Express guide at https://render.com/docs/deploy-node-express-app and Create React App guide at https://render.com/docs/deploy-create-react-app.
+
+## Deployment limitations
+
+- Images currently save to server/uploads. Render's default filesystem is temporary, so uploaded images can disappear after restarts or deploys. Avoid relying on image evidence until uploads use durable storage.
+- The app sends email via Gmail SMTP on port 587. Render Free blocks outbound SMTP, so emails will not work on that plan.
+- A free backend may sleep while idle; open the API/site before presenting.
+
+See https://render.com/docs/free. Keep credentials only in hosting environment settings.
+
+## API overview
+
+- Auth: POST /api/auth/register (student), POST /api/auth/login, POST /api/auth/staff (admin creates staff), GET /api/auth/staff (admin list).
+- Complaints: POST /api/complaints, GET /api/complaints/my, GET /api/complaints (admin), GET /api/complaints/assigned (staff), PUT /api/complaints/:id/assign, PUT /api/complaints/:id/status, POST /api/complaints/:id/staff-update.
+- Stats: GET /api/stats/complaints and GET /api/stats/users. Feedback routes are under /api/feedback.
+- Protected endpoints require Authorization: Bearer <token>.
+
+## Project structure
+
+- client/ — React frontend.
+- server/ — Express API, Socket.IO server, and MongoDB models.
+- ClientSide.md and ServerSide.md — implementation notes.
+- DEMO.md — presentation checklist and talk track.
